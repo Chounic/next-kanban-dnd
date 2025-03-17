@@ -1,23 +1,18 @@
 import TaskCard from "./TaskCard";
 import { db, Task } from "@/lib/kysely";
-import { seed } from "@/lib/seed";
 
-export default async function TaskBoard() {
+export default async function TaskBoard({ userId }: { userId: string }) {
   const columns = ["Backlog", "Ready", "In Progress", "Done"];
   let tasks: Task[] = [];
 
   try {
-    tasks = await db.selectFrom("tasks").selectAll().execute();
+    tasks = await db
+      .selectFrom("tasks")
+      .where("userId", "=", userId)
+      .selectAll()
+      .execute();
   } catch (e: any) {
-    if (e.message === `relation "tasks" does not exist`) {
-      console.log(
-        "Table does not exist, creating and seeding it with dummy data now..."
-      );
-      // Table is not created yet
-      await seed();
-    } else {
-      throw e;
-    }
+    console.error(e);
   }
 
   return (

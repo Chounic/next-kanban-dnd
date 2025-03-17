@@ -3,19 +3,11 @@
 import { CreateTask, db, UpdateTask } from "@/lib/kysely";
 import { revalidatePath } from "next/cache";
 
-export interface User {
-  id: number;
-  name: string;
-  description: string;
-  status: "backlog" | "ready" | "in-progress" | "done";
-}
-
 // Récupérer toutes les tâches
 export async function getTasks() {
   return db.selectFrom("tasks").selectAll().execute();
 }
 
-// Ajouter une tâche
 export async function createTask(data: CreateTask) {
   await db
     .insertInto("tasks")
@@ -23,12 +15,12 @@ export async function createTask(data: CreateTask) {
       name: data.name,
       description: data.description,
       status: data.status as "backlog" | "ready" | "in-progress" | "done",
+      userId: data.userId,
     })
     .executeTakeFirst();
   revalidatePath("/");
 }
 
-// Mettre à jour une tâche (changement de statut)
 export async function updateTask(task: UpdateTask) {
   await db
     .updateTable("tasks")
@@ -42,7 +34,6 @@ export async function updateTask(task: UpdateTask) {
   revalidatePath("/");
 }
 
-// Supprimer une tâche
 export async function deleteTask(taskId: number) {
   await db.deleteFrom("tasks").where("id", "=", taskId).execute();
   revalidatePath("/");

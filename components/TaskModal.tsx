@@ -5,7 +5,6 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTaskModal } from "@/hooks/useTaskModal";
 import { createTask, updateTask } from "@/action/tasks-server";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -18,22 +17,12 @@ import {
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
+import { TaskFormSchema, taskFormSchema } from "@/lib/zod-validations";
 
-const formSchema = z.object({
-  name: z
-    .string()
-    .min(2, {
-      message: "Task name must be at least 2 characters.",
-    })
-    .max(50),
-  description: z.string(),
-  status: z.enum(["backlog", "ready", "in-progress", "done"]),
-});
-
-export default function TaskModal() {
+export default function TaskModal({ userId }: { userId: string }) {
   const { isOpen, closeModal, task } = useTaskModal();
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<TaskFormSchema>({
+    resolver: zodResolver(taskFormSchema),
     defaultValues: {
       name: "",
       description: "",
@@ -51,13 +40,13 @@ export default function TaskModal() {
     }
   }, [task, form]);
 
-  async function onSubmit(data: z.infer<typeof formSchema>) {
+  async function onSubmit(data: TaskFormSchema) {
     if (task) {
       // Update existing task
       await updateTask({ ...data, id: task.id });
     } else {
       // Create new task
-      await createTask(data);
+      await createTask({ ...data, userId });
     }
     form.reset();
     closeModal();
