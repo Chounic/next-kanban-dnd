@@ -1,7 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import { Inter } from "next/font/google";
-import { SignOut } from "@/components/auth/SignOutButton";
 
 export const metadata = {
   metadataBase: new URL("https://postgres-kysely.vercel.app"),
@@ -24,12 +23,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.variable}>
-        <header className="container mx-auto p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold">Task Management</h1>
-            <SignOut />
-          </div>
-        </header>
         {children}
         <Toaster richColors />
       </body>
