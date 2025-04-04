@@ -9,7 +9,7 @@ export const authFormSchema = z.object({
 
 export type AuthFormSchema = z.infer<typeof authFormSchema>;
 
-export const taskFormSchema = z.object({
+export const taskFormBaseSchema = z.object({
   name: z
     .string()
     .min(2, {
@@ -18,6 +18,17 @@ export const taskFormSchema = z.object({
     .max(50),
   description: z.string(),
   status: z.enum(["backlog", "ready", "in-progress", "done"]),
+  uuid: z.string().uuid().optional(),
+});
+
+export type TaskFormBaseSchema = z.infer<typeof taskFormBaseSchema>;
+
+export const taskFormSchema = taskFormBaseSchema.extend({
+  priority: z.enum(["low", "medium", "high", "urgent"]),
+  dueDate: z.date().nullable().optional(),
+  estimatedTime: z.number().int().nonnegative().nullable().optional(),
+  labels: z.array(z.string()),
+  archived: z.boolean(),
 });
 
 export type TaskFormSchema = z.infer<typeof taskFormSchema>;

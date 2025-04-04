@@ -2,21 +2,8 @@ import { Kysely, sql } from "kysely";
 
 export async function up(db: Kysely<never>): Promise<void> {
   // language=Postgresql
-  await db.schema
-    .createTable("tasks")
-    .ifNotExists()
-    .addColumn("id", "serial", (cb) => cb.primaryKey())
-    .addColumn("name", "varchar(255)", (cb) => cb.notNull())
-    .addColumn("description", "varchar(255)") //TODO change to jsonb for structured data
-    .addColumn("status", "varchar(255)")
-    .addColumn("userId", "uuid", (col) =>
-      col.references("User.id").onDelete("cascade").notNull()
-    )
-    .addColumn("createdAt", sql`timestamp with time zone`, (cb) =>
-      cb.defaultTo(sql`current_timestamp`)
-    )
-    .execute();
 
+  //TODO check data and constraints
   await db.schema
     .createTable("User")
     .ifNotExists()
@@ -62,6 +49,41 @@ export async function up(db: Kysely<never>): Promise<void> {
 
     .on("Account")
     .column("userId")
+    .execute();
+
+  await db.schema
+    .createTable("tasks")
+    .ifNotExists()
+    .addColumn("id", "serial", (cb) => cb.primaryKey())
+    .addColumn("uuid", "uuid", (col) =>
+      col
+        .defaultTo(sql`gen_random_uuid()`)
+        .unique()
+        .notNull()
+    )
+    .addColumn("name", "varchar(255)", (cb) => cb.notNull())
+    .addColumn("description", "varchar(255)") //TODO change to jsonb for structured data
+    .addColumn("status", "varchar(255)", (cb) =>
+      cb.notNull().defaultTo(sql`'backlog'`)
+    )
+    .addColumn("userId", "uuid", (col) =>
+      col.references("User.id").onDelete("cascade").notNull()
+    )
+    .addColumn("priority", "text", (cb) =>
+      cb.notNull().defaultTo(sql`'medium'`)
+    )
+    .addColumn("dueDate", sql`timestamptz`)
+    .addColumn("labels", sql`text[]`, (cb) => cb.notNull().defaultTo(sql`'{}'`))
+    .addColumn("parentTaskId", "integer", (col) =>
+      col.references("tasks.id").onDelete("cascade")
+    )
+    .addColumn("archived", "boolean", (cb) =>
+      cb.notNull().defaultTo(sql`FALSE`)
+    )
+    .addColumn("estimatedTime", "integer")
+    .addColumn("createdAt", sql`timestamp with time zone`, (cb) =>
+      cb.notNull().defaultTo(sql`current_timestamp`)
+    )
     .execute();
 }
 

@@ -3,22 +3,26 @@
 import { CreateTask, db, UpdateTask } from "@/lib/kysely";
 import { revalidatePath } from "next/cache";
 
-// Récupérer toutes les tâches
-export async function getTasks() {
-  return db.selectFrom("tasks").selectAll().execute();
-}
-
 export async function createTask(data: CreateTask) {
-  await db
+  const task = await db
     .insertInto("tasks")
     .values({
       name: data.name,
       description: data.description,
-      status: data.status as "backlog" | "ready" | "in-progress" | "done",
+      status: data.status,
+      priority: data.priority,
+      dueDate: data.dueDate,
+      estimatedTime: data.estimatedTime,
       userId: data.userId,
+      parentTaskId: data.parentTaskId,
+      labels: data.labels,
+      archived: data.archived,
     })
+    .returningAll()
     .executeTakeFirst();
   revalidatePath("/");
+
+  return task;
 }
 
 export async function updateTask(task: UpdateTask) {
@@ -27,7 +31,13 @@ export async function updateTask(task: UpdateTask) {
     .set({
       name: task.name,
       description: task.description,
-      status: task.status as "backlog" | "ready" | "in-progress" | "done",
+      status: task.status,
+      priority: task.priority,
+      dueDate: task.dueDate,
+      estimatedTime: task.estimatedTime,
+      parentTaskId: task.parentTaskId,
+      labels: task.labels,
+      archived: task.archived,
     })
     .where("id", "=", task.id)
     .executeTakeFirst();

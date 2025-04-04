@@ -75,7 +75,6 @@ export const login = async (formData: AuthFormSchema) => {
     } else return { success: "Vous êtes connecté(e) à votre compte." };
   } catch (error) {
     if (error instanceof CustomError) {
-      console.log("🚀 ~typeof login ~ error.message:", error.message);
       return { error: error.message };
     }
     return { error: "La connection a échouée." };

@@ -70,17 +70,27 @@ export interface TaskTable {
   // using the `Generated` type. This way they are automatically
   // made optional in inserts and updates.
   id: Generated<number>;
-  name: string;
+  uuid: Generated<string> | string;
+  name: ColumnType<string, string, string>;
   description: string;
   status: ColumnType<"backlog" | "ready" | "in-progress" | "done">;
   userId: string;
-
+  priority: ColumnType<"low" | "medium" | "high" | "urgent">;
+  dueDate: Date | null;
+  labels: ColumnType<string[], string[] | undefined, string[] | undefined>;
+  parentTaskId: ColumnType<
+    number | null,
+    number | undefined,
+    number | undefined
+  >;
+  archived: ColumnType<boolean, boolean | undefined, boolean | undefined>;
+  estimatedTime: number | null;
   // You can specify a different type for each operation (select, insert and
   // update) using the `ColumnType<SelectType, InsertType, UpdateType>`
   // wrapper. Here we define a column `createdAt` that is selected as
   // a `Date`, can optionally be provided as a `string` in inserts and
   // can never be updated:
-  createdAt: ColumnType<Date, string | undefined, never>;
+  createdAt: ColumnType<Date, never, never>;
 }
 
 // Type pour sélectionner une tâche (lecture depuis la DB)
@@ -90,7 +100,9 @@ export type Task = Selectable<TaskTable>;
 export type CreateTask = Insertable<TaskTable>;
 
 // Type pour mettre à jour une tâche existante
-export type UpdateTask = Omit<Updateable<TaskTable>, "id"> & { id: number };
+export type UpdateTask = Omit<Updateable<TaskTable>, "id"> & {
+  id: number;
+};
 
 // Keys of this interface are table names.
 export interface Database {

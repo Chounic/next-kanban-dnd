@@ -1,16 +1,27 @@
-import { Task } from "@/lib/kysely";
+import { Task, UpdateTask } from "@/lib/kysely";
+import { TaskFormBaseSchema } from "@/lib/zod-validations";
 import { create } from "zustand";
 
 type TaskModalStore = {
   isOpen: boolean;
-  task: Task | null;
-  openModal: (task?: Task) => void;
+  task?: Task;
+  openModal: (task?: Task, subTasks?: Task[]) => void;
   closeModal: () => void;
+  subTasks: Task[];
+  editedSubTask?: TaskFormBaseSchema;
+  isSubTaskModalOpen: boolean;
+  openSubTaskModal: (subTask?: TaskFormBaseSchema) => void;
+  closeSubTaskModal: () => void;
 };
 
 export const useTaskModal = create<TaskModalStore>((set) => ({
   isOpen: false,
-  task: null,
-  openModal: (task) => set({ isOpen: true, task }),
-  closeModal: () => set({ isOpen: false, task: null }),
+  openModal: (task, subTasks) => set({ isOpen: true, task, subTasks }),
+  closeModal: () => set({ isOpen: false, task: undefined, subTasks: [] }),
+  subTasks: [],
+  isSubTaskModalOpen: false,
+  openSubTaskModal: (subTask) =>
+    set({ isSubTaskModalOpen: true, editedSubTask: subTask }),
+  closeSubTaskModal: () =>
+    set({ isSubTaskModalOpen: false, editedSubTask: undefined }),
 }));

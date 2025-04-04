@@ -11,7 +11,13 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 
-export default function TaskCard({ task }: { task: Task }) {
+export default function TaskCard({
+  task,
+  subTasks,
+}: {
+  task: Task;
+  subTasks: Task[];
+}) {
   const { openModal } = useTaskModal();
 
   return (
@@ -29,7 +35,7 @@ export default function TaskCard({ task }: { task: Task }) {
             <EllipsisVertical />
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => openModal(task)}>
+            <DropdownMenuItem onClick={() => openModal(task, subTasks)}>
               <Pencil /> <span>Modifier</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={async () => deleteTask(task.id)}>
