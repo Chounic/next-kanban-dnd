@@ -46,7 +46,7 @@ import {
 } from "./ui/command";
 import { Checkbox } from "./ui/checkbox";
 import SubTaskModal from "./SubTaskModal";
-import { CreateTask, Task, UpdateTask } from "@/lib/kysely";
+import { CreateTask, Task, UpdateTask } from "@/database/kysely";
 
 const availableLabels = [
   "bug",
@@ -96,7 +96,7 @@ export default function TaskModal({ userId }: { userId: string }) {
 
   async function onSubmit(data: TaskFormSchema) {
     if (task) {
-      await updateTask({ ...data, id: task.id });
+      await updateTask({ ...data, uuid: task.uuid });
       for (const subTaskListItem of subTaskList) {
         if ("id" in subTaskListItem) {
           await updateTask(subTaskListItem as UpdateTask);
@@ -111,7 +111,7 @@ export default function TaskModal({ userId }: { userId: string }) {
 
       for (const subTask of subTasks) {
         if (!subTaskList.map((st) => st.uuid).includes(subTask.uuid)) {
-          await deleteTask(subTask.id);
+          await deleteTask(subTask.uuid);
         }
       }
     } else {

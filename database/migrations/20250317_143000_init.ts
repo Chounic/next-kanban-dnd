@@ -1,9 +1,6 @@
 import { Kysely, sql } from "kysely";
 
 export async function up(db: Kysely<never>): Promise<void> {
-  // language=Postgresql
-
-  //TODO check data and constraints
   await db.schema
     .createTable("User")
     .ifNotExists()
@@ -14,7 +11,7 @@ export async function up(db: Kysely<never>): Promise<void> {
     .addColumn("name", "text")
     .addColumn("email", "text", (col) => col.unique().notNull())
     .addColumn("emailVerified", "timestamptz")
-    .addColumn("password", "text") // maybe add unique constraint aka 2 users can't have the same password
+    .addColumn("password", "text")
     .addColumn("image", "text")
     .addColumn("created_at", sql`timestamp with time zone`, (cb) =>
       cb.defaultTo(sql`current_timestamp`)
@@ -81,15 +78,112 @@ export async function up(db: Kysely<never>): Promise<void> {
       cb.notNull().defaultTo(sql`FALSE`)
     )
     .addColumn("estimatedTime", "integer")
+
     .addColumn("createdAt", sql`timestamp with time zone`, (cb) =>
       cb.notNull().defaultTo(sql`current_timestamp`)
     )
     .execute();
+
+  await db.schema
+    .createTable("tasks_order")
+    .ifNotExists()
+    .addColumn("id", "serial", (cb) => cb.primaryKey())
+    .addColumn("userId", "uuid", (col) =>
+      col.references("User.id").onDelete("cascade").notNull()
+    )
+    .addColumn("order", sql`jsonb`, (cb) =>
+      cb.notNull().defaultTo(sql`'{}'::jsonb`)
+    )
+    .execute();
+
+  await sql`
+    CREATE OR REPLACE FUNCTION add_task_order()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM tasks_order
+        WHERE "userId" = NEW."userId"
+      ) THEN
+        INSERT INTO tasks_order ("userId", "order")
+        VALUES (
+          NEW."userId",
+          jsonb_build_object(NEW."status", jsonb_build_array(NEW."uuid"))
+        );
+      ELSE
+        UPDATE tasks_order
+        SET "order" = CASE
+          WHEN "order" ? NEW."status" THEN
+            jsonb_set(
+              "order",
+              ARRAY[NEW."status"],
+              ("order"->NEW."status") || jsonb_build_array(NEW."uuid")
+            )
+          ELSE
+            jsonb_set(
+              "order",
+              ARRAY[NEW."status"],
+              jsonb_build_array(NEW."uuid")
+            )
+        END
+        WHERE "userId" = NEW."userId";
+      END IF;
+
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+  `.execute(db);
+
+  await sql`
+    CREATE TRIGGER add_task_order_trigger
+    AFTER INSERT ON tasks
+    FOR EACH ROW
+    EXECUTE FUNCTION add_task_order();
+  `.execute(db);
+
+  await sql`
+    CREATE OR REPLACE FUNCTION remove_task_order()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      -- Update the tasks_order table to remove the task's UUID from all arrays in the "order" column
+UPDATE tasks_order
+      SET "order" = (
+ SELECT 
+jsonb_object_agg(key, CASE 
+             WHEN jsonb_typeof(value) = 'array' AND value ? OLD."uuid"::text THEN
+                 value - OLD."uuid"::text
+             ELSE value
+           END)
+FROM jsonb_each("order") AS je(key, value) 
+)
+      WHERE "userId" = OLD."userId";
+     RETURN OLD;
+    END;
+    $$ LANGUAGE plpgsql;
+  `.execute(db);
+
+  await sql`
+    CREATE TRIGGER remove_task_order_trigger
+    AFTER DELETE ON tasks
+    FOR EACH ROW
+    EXECUTE FUNCTION remove_task_order();
+  `.execute(db);
 }
 
 export async function down(db: Kysely<never>): Promise<void> {
   await db.schema.dropTable("tasks").execute();
   await db.schema.dropIndex("Account_userId_index").execute();
   await db.schema.dropTable("Account").execute();
+  await db.schema.dropTable("tasks_order").execute();
   await db.schema.dropTable("User").execute();
+
+  await sql`DROP TRIGGER IF EXISTS remove_task_order_trigger ON tasks;`.execute(
+    db
+  );
+  await sql`DROP TRIGGER IF EXISTS add_task_order_trigger ON tasks;`.execute(
+    db
+  );
+
+  await sql`DROP FUNCTION IF EXISTS remove_task_order;`.execute(db);
+  await sql`DROP FUNCTION IF EXISTS add_task_order;`.execute(db);
 }

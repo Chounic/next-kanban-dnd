@@ -1,3 +1,4 @@
+import { TaskStatus } from "@/utils/registry";
 import { z } from "zod";
 
 export const authFormSchema = z.object({
@@ -17,7 +18,7 @@ export const taskFormBaseSchema = z.object({
     })
     .max(50),
   description: z.string(),
-  status: z.enum(["backlog", "ready", "in-progress", "done"]),
+  status: z.enum(Object.values(TaskStatus) as [string, ...string[]]),
   uuid: z.string().uuid().optional(),
 });
 

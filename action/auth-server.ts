@@ -2,7 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { findUserByEmail } from "./users-server";
-import { db } from "@/lib/kysely";
+import { db } from "@/database/kysely";
 import { authFormSchema, AuthFormSchema } from "@/lib/zod-validations";
 import { CustomError, signIn, signOut } from "@/auth";
 import { AuthError } from "next-auth";

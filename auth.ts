@@ -3,7 +3,7 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { KyselyAdapter } from "@auth/kysely-adapter";
-import { db, User } from "./lib/kysely";
+import { db, User } from "./database/kysely";
 
 export class CustomError extends CredentialsSignin {
   constructor(code: string) {

@@ -1,6 +1,6 @@
 "use server";
 
-import { db, User } from "@/lib/kysely";
+import { db, User } from "@/database/kysely";
 
 export async function findUserByEmail(email: string): Promise<User | null> {
   const user = await db

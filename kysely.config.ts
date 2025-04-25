@@ -10,7 +10,7 @@ export default defineConfig({
     postgres: postgres(process.env.POSTGRES_URL!, { ssl: false }),
   }),
   migrations: {
-    migrationFolder: "lib/migrations",
+    migrationFolder: "database/migrations",
   },
   // seeds: {
   //   seedFolder: "lib/seeds",

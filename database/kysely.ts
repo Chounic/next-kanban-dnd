@@ -16,6 +16,7 @@ import postgres from "postgres";
 // that the database interface has all the fields that Auth.js expects.
 import { KyselyAuth } from "@auth/kysely-adapter";
 import type { Codegen } from "@auth/kysely-adapter";
+import { TaskStatus } from "@/utils/registry";
 
 export interface UserTable {
   id: GeneratedAlways<string>;
@@ -73,7 +74,7 @@ export interface TaskTable {
   uuid: Generated<string> | string;
   name: ColumnType<string, string, string>;
   description: string;
-  status: ColumnType<"backlog" | "ready" | "in-progress" | "done">;
+  status: ColumnType<TaskStatusType>;
   userId: string;
   priority: ColumnType<"low" | "medium" | "high" | "urgent">;
   dueDate: Date | null;
@@ -85,6 +86,7 @@ export interface TaskTable {
   >;
   archived: ColumnType<boolean, boolean | undefined, boolean | undefined>;
   estimatedTime: number | null;
+
   // You can specify a different type for each operation (select, insert and
   // update) using the `ColumnType<SelectType, InsertType, UpdateType>`
   // wrapper. Here we define a column `createdAt` that is selected as
@@ -93,6 +95,10 @@ export interface TaskTable {
   createdAt: ColumnType<Date, never, never>;
 }
 
+// Create an enum-like object for TaskTable["status"]
+
+export type TaskStatusType = (typeof TaskStatus)[keyof typeof TaskStatus];
+
 // Type pour sélectionner une tâche (lecture depuis la DB)
 export type Task = Selectable<TaskTable>;
 
@@ -100,8 +106,18 @@ export type Task = Selectable<TaskTable>;
 export type CreateTask = Insertable<TaskTable>;
 
 // Type pour mettre à jour une tâche existante
-export type UpdateTask = Omit<Updateable<TaskTable>, "id"> & {
-  id: number;
+export type UpdateTask = Omit<Updateable<TaskTable>, "uuid"> & {
+  uuid: string;
+};
+
+export interface TasksOrderTable {
+  id: Generated<number>;
+  userId: string;
+  order: TasksOrder;
+}
+
+export type TasksOrder = {
+  [K in TaskStatusType]?: string[];
 };
 
 // Keys of this interface are table names.
@@ -111,6 +127,7 @@ export interface Database {
   Account: Account;
   Session: Session;
   VerificationToken: VerificationToken;
+  tasks_order: TasksOrderTable;
 }
 
 export const db = new KyselyAuth<Database, Codegen>({

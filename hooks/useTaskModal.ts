@@ -1,4 +1,4 @@
-import { Task, UpdateTask } from "@/lib/kysely";
+import { Task } from "@/database/kysely";
 import { TaskFormBaseSchema } from "@/lib/zod-validations";
 import { create } from "zustand";
 

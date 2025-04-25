@@ -1,14 +1,17 @@
-import TaskCard from "./TaskCard";
-import { db, Task } from "@/lib/kysely";
+import { db, Task, TasksOrder } from "@/database/kysely";
+import SearchBar from "./SearchBar";
+import CreateTaskButton from "./CreateTaskButton";
+import TasksList from "./TasksList";
+import { getTasksOrder } from "@/action/tasks-server";
 
-interface TaskWithSubTasks {
+export interface TaskWithSubTasks {
   task: Task;
   subTasks: Task[];
 }
 
 export default async function TaskBoard({ userId }: { userId: string }) {
-  const columns = ["Backlog", "Ready", "In Progress", "Done"];
   let tasksWithSubTasks: TaskWithSubTasks[] = [];
+  let tasksOrder: TasksOrder = {};
 
   try {
     const tasks = await db
@@ -21,26 +24,23 @@ export default async function TaskBoard({ userId }: { userId: string }) {
       task,
       subTasks: tasks.filter((t) => t.parentTaskId === task.id),
     }));
+
+    tasksOrder = await getTasksOrder(userId);
   } catch (e: any) {
     console.error(e);
   }
 
   return (
-    <div className="grid grid-cols-4 gap-4">
-      {columns.map((column) => (
-        <div key={column} className="bg-gray-100 p-4 rounded-lg">
-          <h2 className="font-semibold mb-2">{column}</h2>
-          {tasksWithSubTasks
-            .filter(
-              (t) =>
-                t.task.status.toLowerCase() ===
-                column.toLowerCase().replace(" ", "-")
-            )
-            .map((t) => (
-              <TaskCard key={t.task.id} task={t.task} subTasks={t.subTasks} />
-            ))}
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="flex justify-between items-center mb-4">
+        <SearchBar />
+        <CreateTaskButton />
+      </div>
+      <TasksList
+        tasksWithSubTasks={tasksWithSubTasks}
+        order={tasksOrder}
+        userId={userId}
+      />
+    </>
   );
 }

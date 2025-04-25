@@ -1,6 +1,6 @@
 "use server";
 
-import { CreateTask, db, UpdateTask } from "@/lib/kysely";
+import { CreateTask, db, TasksOrder, UpdateTask } from "@/database/kysely";
 import { revalidatePath } from "next/cache";
 
 export async function createTask(data: CreateTask) {
@@ -25,7 +25,7 @@ export async function createTask(data: CreateTask) {
   return task;
 }
 
-export async function updateTask(task: UpdateTask) {
+export async function updateTask(task: UpdateTask, revalidate: boolean = true) {
   await db
     .updateTable("tasks")
     .set({
@@ -39,12 +39,31 @@ export async function updateTask(task: UpdateTask) {
       labels: task.labels,
       archived: task.archived,
     })
-    .where("id", "=", task.id)
+    .where("uuid", "=", task.uuid)
     .executeTakeFirst();
+  if (revalidate) revalidatePath("/");
+}
+
+export async function deleteTask(taskUuid: string) {
+  await db.deleteFrom("tasks").where("uuid", "=", taskUuid).execute();
   revalidatePath("/");
 }
 
-export async function deleteTask(taskId: number) {
-  await db.deleteFrom("tasks").where("id", "=", taskId).execute();
-  revalidatePath("/");
+export async function getTasksOrder(userUuid: string) {
+  const data = await db
+    .selectFrom("tasks_order")
+    .where("userId", "=", userUuid)
+    .select("order")
+    .execute();
+
+  return data[0]?.order ?? {};
+}
+export async function updateTasksOrder(order: TasksOrder, userUuid: string) {
+  await db
+    .updateTable("tasks_order")
+    .set({
+      order: order,
+    })
+    .where("userId", "=", userUuid)
+    .executeTakeFirst();
 }
