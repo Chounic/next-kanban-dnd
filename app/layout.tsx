@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import { Inter } from "next/font/google";
+import { cn } from "@/lib/utils";
 
 export const metadata = {
   metadataBase: new URL("https://postgres-kysely.vercel.app"),
@@ -21,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.variable}>
+    <html className="h-full" lang="en">
+      <body className={cn("h-full flex flex-col", inter.variable)}>
         {children}
         <Toaster richColors />
       </body>

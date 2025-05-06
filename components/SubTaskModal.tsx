@@ -75,12 +75,12 @@ export default function SubTaskModal({
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle>
-                {!editedSubTask ? "Create Subtask" : "Update Subtask"}
+                {!editedSubTask
+                  ? "Nouvelle sous-tâche"
+                  : "Éditer la sous-tâche"}
               </DialogTitle>
               <DialogDescription>
-                {!editedSubTask
-                  ? "This task will be created as a subtask of the current task."
-                  : "This task is a subtask of the current task."}
+                Cette tâche est une sous-tâche de la tâche parente créée/éditée
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -89,7 +89,7 @@ export default function SubTaskModal({
                 name="name"
                 render={({ field }) => (
                   <FormItem className="mb-4">
-                    <FormLabel className="block mb-1">Task Name</FormLabel>
+                    <FormLabel className="block mb-1">Titre</FormLabel>
                     <FormControl>
                       <Input {...field} className="w-full p-2 border rounded" />
                     </FormControl>
@@ -144,10 +144,10 @@ export default function SubTaskModal({
                 variant="outline"
                 onClick={closeSubTaskModal}
               >
-                Cancel
+                Annuler
               </Button>
               <Button type="submit">
-                {!editedSubTask ? "Create Subtask" : "Update Subtask"}
+                {!editedSubTask ? "Créer" : "Enregistrer"}
               </Button>
             </DialogFooter>
           </form>

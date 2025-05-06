@@ -21,5 +21,9 @@ export function SignOut() {
       .catch((data) => toast.error(data.error));
   };
 
-  return <Button onClick={handleSignOut}>Se déconnecter</Button>;
+  return (
+    <Button className="bg-gray-800" onClick={handleSignOut}>
+      Logout
+    </Button>
+  );
 }

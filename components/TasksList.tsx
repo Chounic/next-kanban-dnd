@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Task, TasksOrder } from "@/database/kysely";
+import { TasksOrder } from "@/database/kysely";
 import TaskCard from "./TaskCard";
 import { TaskStatus } from "@/utils/registry";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import { cn } from "@/lib/utils";
 import { updateTask, updateTasksOrder } from "@/action/tasks-server";
 import { TaskWithSubTasks } from "./TaskBoard";
+import { Squircle } from "lucide-react";
 
 const taskStatusEntries = Object.entries(TaskStatus);
 
@@ -26,7 +27,6 @@ export default function TasksList({
   order: TasksOrder;
   userId: string;
 }) {
-  // Setup two containers with initial items
   const [taskColumns, setTaskColumns] = useState<TasksOrder>({});
 
   useEffect(() => {
@@ -88,47 +88,75 @@ export default function TasksList({
   }
 
   return (
-    <div className="flex">
+    <div className="flex gap-1 flex-1">
       <DragDropContext onDragEnd={handleDragEnd}>
         {taskStatusEntries.map((taskStatus) => {
           const [key, value] = taskStatus;
           return (
-            <Droppable key={value} droppableId={value}>
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  className={cn(
-                    "border-gray-500 border-dashed border-2 flex-1",
-                    snapshot.isDraggingOver ? " bg-green-400" : "bg-white"
-                  )}
-                  {...provided.droppableProps}
-                >
-                  <h2 className="font-semibold mb-2">{toTitleCase(key)}</h2>
-
-                  {taskColumns[value]?.map((id, index) => {
-                    const t = tasksWithSubTasks.find((t) => t.task.uuid === id);
-
-                    return t ? (
-                      <Draggable
-                        key={t.task.uuid}
-                        draggableId={t.task.uuid}
-                        index={index}
-                      >
-                        {(provided, snapshot) => (
-                          <TaskCard
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            task={t}
-                          />
-                        )}
-                      </Draggable>
-                    ) : null;
-                  })}
-                  {provided.placeholder}
-                </div>
+            <div
+              key={value}
+              className={cn(
+                "border rounded-sm w-1/4 bg-stone-50 p-2  has-[:checked]:ring-blue-600 has-[:checked]:ring-2 has-[:checked]:border-transparent border-gray-300 flex flex-col"
               )}
-            </Droppable>
+            >
+              <div className="p-2 min-h-[100px]">
+                <div className="flex items-center gap-1 mb-2">
+                  <Squircle size={16} />
+                  <h2 className="font-semibold">{toTitleCase(key)}</h2>
+                </div>
+                {/* <div className="text-sm text-gray-500">
+                      description description description description
+                      description
+                    </div> */}
+              </div>
+              <Droppable droppableId={value}>
+                {(provided, snapshot) => {
+                  return (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className="flex-1"
+                    >
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={snapshot.isDraggingOver}
+                        readOnly
+                      />
+                      {taskColumns[value]?.map((id, index) => {
+                        const t = tasksWithSubTasks.find(
+                          (t) => t.task.uuid === id
+                        );
+
+                        return t ? (
+                          <Draggable
+                            key={t.task.uuid}
+                            draggableId={t.task.uuid}
+                            index={index}
+                          >
+                            {(provided, snapshot) => (
+                              <TaskCard
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                task={t}
+                                className={cn(
+                                  "",
+                                  snapshot.isDragging
+                                    ? " ring-blue-600 ring-2 border-transparent"
+                                    : "border-gray-300"
+                                )}
+                              />
+                            )}
+                          </Draggable>
+                        ) : null;
+                      })}
+                      {provided.placeholder}
+                    </div>
+                  );
+                }}
+              </Droppable>
+            </div>
           );
         })}
       </DragDropContext>

@@ -59,7 +59,7 @@ export async function up(db: Kysely<never>): Promise<void> {
         .notNull()
     )
     .addColumn("name", "varchar(255)", (cb) => cb.notNull())
-    .addColumn("description", "varchar(255)") //TODO change to jsonb for structured data
+    .addColumn("description", "text") //TODO change to jsonb for structured data
     .addColumn("status", "varchar(255)", (cb) =>
       cb.notNull().defaultTo(sql`'backlog'`)
     )

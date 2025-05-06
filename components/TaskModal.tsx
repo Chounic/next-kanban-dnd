@@ -4,7 +4,12 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTaskModal } from "@/hooks/useTaskModal";
-import { createTask, deleteTask, updateTask } from "@/action/tasks-server";
+import {
+  createTask,
+  deleteTask,
+  suggestTaskMetadata,
+  updateTask,
+} from "@/action/tasks-server";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -29,7 +34,9 @@ import {
   Check,
   CircleX,
   Pencil,
+  Plus,
   Settings,
+  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -44,9 +51,9 @@ import {
   CommandItem,
   CommandList,
 } from "./ui/command";
-import { Checkbox } from "./ui/checkbox";
 import SubTaskModal from "./SubTaskModal";
 import { CreateTask, Task, UpdateTask } from "@/database/kysely";
+import { v4 as uuidv4 } from "uuid";
 
 const availableLabels = [
   "bug",
@@ -67,6 +74,7 @@ export default function TaskModal({ userId }: { userId: string }) {
       description: "",
       status: "backlog",
       priority: "medium",
+      dueDate: null,
       labels: [],
       archived: false,
     },
@@ -77,6 +85,7 @@ export default function TaskModal({ userId }: { userId: string }) {
   const [subTaskList, setSubTaskList] = useState<(TaskFormBaseSchema | Task)[]>(
     []
   );
+  const [suggestedLabels, setSuggestedLabels] = useState<string[]>([]);
 
   useEffect(() => {
     if (task) {
@@ -93,6 +102,54 @@ export default function TaskModal({ userId }: { userId: string }) {
     }
     setSubTaskList(subTasks);
   }, [form, task /* isOpen */]);
+
+  const fetchAISuggestedValues = async () => {
+    const name = form.getValues("name");
+    const description = form.getValues("description");
+
+    if (!description.trim()) return;
+
+    try {
+      const metadata = await suggestTaskMetadata(name, description);
+      if (metadata?.tags && metadata?.tags.length > 0) {
+        setSuggestedLabels(metadata?.tags);
+        const currentLabels = form.getValues("labels");
+        const labelsTodAdd: string[] = [];
+        metadata?.tags.forEach((label) => {
+          if (!currentLabels.includes(label)) {
+            labelsTodAdd.push(label);
+          }
+        });
+        form.setValue("labels", [...currentLabels, ...labelsTodAdd]);
+      }
+
+      if (metadata?.priority && metadata?.priority !== null) {
+        form.setValue("priority", metadata.priority);
+      }
+
+      if (metadata?.dueDate && metadata?.dueDate !== null) {
+        form.setValue("dueDate", metadata.dueDate);
+      }
+
+      if (metadata?.estimatedTime && metadata?.estimatedTime !== null) {
+        form.setValue("estimatedTime", metadata.estimatedTime);
+      }
+
+      if (metadata?.subtasks && metadata?.subtasks.length > 0) {
+        metadata.subtasks.forEach((subTask) => {
+          const newSubTask = {
+            name: subTask,
+            description: "",
+            status: "backlog",
+            uuid: uuidv4(),
+          };
+          addSubTask(newSubTask);
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch suggested labels:", error);
+    }
+  };
 
   async function onSubmit(data: TaskFormSchema) {
     if (task) {
@@ -169,37 +226,55 @@ export default function TaskModal({ userId }: { userId: string }) {
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div className="bg-white p-6 rounded-lg w-full max-w-md">
-          <div className="flex justify-between">
-            <h2 className="text-xl font-semibold mb-4">
-              {task ? "Edit Task" : "Create Task"}
-            </h2>
+        <div className="bg-white p-6 rounded-lg w-full max-w-3xl h-[95vh] flex flex-col">
+          <div className="flex justify-between mb-2">
+            <div className="flex items-center gap-10">
+              <h2 className="text-xl font-semibold">
+                {task ? "Éditer la tâche" : "Nouvelle tâche"}
+              </h2>
+              {/*  
+              - create AI buttons to trigger openAi data fetching for each field 
+              - create AI settings modal to set fields applied to global AI button 
+              */}
+
+              <Button
+                variant="ghost"
+                className="hover:bg-transparent p-0 mt-1"
+                onClick={fetchAISuggestedValues}
+              >
+                <Sparkles size={16} className="" />
+                <span className="italic text-sm">Remplir les champs</span>
+              </Button>
+            </div>
             <Button
               variant="ghost"
               className="hover:bg-transparent"
               onClick={closeModal}
             >
-              <CircleX />
+              <X size={32} className="!size-6" />
             </Button>
           </div>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-              <div className="flex flex-col md:flex-row">
+            <form
+              id="task-form"
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex-1 flex flex-col overflow-hidden"
+            >
+              <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
                 {/* Main content - left side */}
-                <div className="flex-1 p-6 border-r">
-                  <div className="mb-4">
-                    <h2>Create New Task</h2>
-                    <p>Fill in the details to create a new task.</p>
-                  </div>
-
-                  <div className="space-y-2">
+                <div className="flex-1 px-6 pt-6 flex flex-col">
+                  <div className="space-y-2 flex-1 flex flex-col">
                     <FormField
                       control={form.control}
                       name="name"
                       render={({ field }) => (
                         <FormItem className="mb-4">
                           <FormLabel className="block mb-1">
-                            Task Name
+                            Titre{" "}
+                            <span className="text-xs text-gray-800  font-normal">
+                              (utilisé pour remplir les autres champs{" "}
+                              <Sparkles size={12} className="inline" />)
+                            </span>
                           </FormLabel>
                           <FormControl>
                             <Input
@@ -215,14 +290,18 @@ export default function TaskModal({ userId }: { userId: string }) {
                       control={form.control}
                       name="description"
                       render={({ field }) => (
-                        <FormItem className="mb-4">
+                        <FormItem className="mb-4 flex-1 flex flex-col">
                           <FormLabel className="block mb-1">
-                            Description
+                            Description{" "}
+                            <span className="text-xs text-gray-800  font-normal">
+                              (utilisé pour remplir les autres champs{" "}
+                              <Sparkles size={12} className="inline" />)
+                            </span>
                           </FormLabel>
                           <FormControl>
                             <Textarea
                               {...field}
-                              className="w-full p-2 border rounded"
+                              className="w-full p-2 border rounded flex-1"
                             />
                           </FormControl>
                           <FormMessage />
@@ -233,11 +312,7 @@ export default function TaskModal({ userId }: { userId: string }) {
                 </div>
 
                 {/* Properties - right side */}
-                <div className="w-full md:w-[300px] p-6 space-y-4 bg-muted/20">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-4">
-                    Task Properties
-                  </h3>
-
+                <div className="md:w-[300px] p-6 space-y-4 bg-muted/20 flex flex-col">
                   <div className="grid grid-cols-2 gap-2">
                     <FormField
                       control={form.control}
@@ -248,7 +323,7 @@ export default function TaskModal({ userId }: { userId: string }) {
                           <FormControl>
                             <select
                               {...field}
-                              className="w-full p-2 border rounded"
+                              className="w-full px-2 border rounded h-7"
                               onChange={(e) => field.onChange(e.target.value)}
                               value={field.value}
                             >
@@ -274,7 +349,7 @@ export default function TaskModal({ userId }: { userId: string }) {
                           <FormControl>
                             <select
                               {...field}
-                              className="w-full p-2 border rounded"
+                              className="w-full px-2 border rounded h-7"
                               onChange={(e) => field.onChange(e.target.value)}
                               value={field.value}
                             >
@@ -295,8 +370,8 @@ export default function TaskModal({ userId }: { userId: string }) {
                     name="dueDate"
                     render={({ field }) => {
                       return (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Echéance</FormLabel>
+                        <FormItem className="flex flex-col !mt-2">
+                          <FormLabel>Écheance</FormLabel>
                           <Popover
                             open={openDueDatePopover}
                             onOpenChange={setOpenDueDatePopover}
@@ -305,7 +380,7 @@ export default function TaskModal({ userId }: { userId: string }) {
                               <Button
                                 variant={"outline"}
                                 className={cn(
-                                  "w-[240px] pl-3 text-left font-normal flex justify-between",
+                                  " pl-3 text-left font-normal flex justify-between h-7",
                                   !field.value && "text-muted-foreground"
                                 )}
                               >
@@ -323,7 +398,7 @@ export default function TaskModal({ userId }: { userId: string }) {
                                   </>
                                 ) : (
                                   <>
-                                    <span>Pick a date</span>
+                                    <span>Choisir une date</span>
                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                   </>
                                 )}
@@ -357,12 +432,12 @@ export default function TaskModal({ userId }: { userId: string }) {
                     render={({ field }) => (
                       <FormItem className="mb-4">
                         <FormLabel className="block mb-1">
-                          Estimated Time (days)
+                          Temps estimé (jours)
                         </FormLabel>
                         <FormControl>
                           <Input
                             {...field}
-                            className="w-full p-2 border rounded"
+                            className="w-full p-2 border rounded bg-white !h-7"
                             type="number"
                             min={0}
                             step={1}
@@ -378,61 +453,6 @@ export default function TaskModal({ userId }: { userId: string }) {
                       </FormItem>
                     )}
                   />
-
-                  <div className="pt-2">
-                    <Button
-                      variant="outline"
-                      className="w-full text-xs h-8"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        openSubTaskModal();
-                      }}
-                    >
-                      Create Subtask
-                    </Button>
-                  </div>
-                  {subTaskList.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="text-xs font-medium mb-2">Subtasks</h4>
-                      <div className="space-y-2 max-h-[150px] overflow-y-auto pr-1">
-                        {subTaskList.map((subTask, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center justify-between bg-background rounded-md border p-2 text-xs"
-                          >
-                            <span className="truncate flex-1">
-                              {subTask.name}
-                            </span>
-                            <div className="flex items-center gap-1 ml-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  openSubTaskModal(subTask);
-                                }}
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-destructive"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  deleteSubtask(subTask.uuid!); //TODO fix Tasks Type Attribution
-                                }}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   <FormField
                     control={form.control}
                     name="labels"
@@ -441,15 +461,17 @@ export default function TaskModal({ userId }: { userId: string }) {
                         <FormControl>
                           <Popover
                             open={openLabelsPopover}
-                            onOpenChange={setOpenLabelsPopover}
+                            onOpenChange={(isOpen) => {
+                              setOpenLabelsPopover(isOpen);
+                            }}
                             {...field}
                           >
                             <PopoverTrigger asChild>
                               <Button
-                                variant="outline"
-                                className="w-full justify-between text-xs h-8"
+                                variant="ghost"
+                                className="w-full justify-between text-xs h-8 p-0"
                               >
-                                <span>Labels</span>
+                                <FormLabel>Étiquettes</FormLabel>
                                 <span>
                                   <Settings />
                                 </span>
@@ -459,9 +481,30 @@ export default function TaskModal({ userId }: { userId: string }) {
                               <Command>
                                 <CommandInput placeholder="Search labels..." />
                                 <CommandList>
-                                  <CommandEmpty>No label found.</CommandEmpty>
+                                  <CommandEmpty>
+                                    Aucune étiquette trouvée.
+                                  </CommandEmpty>
                                   <CommandGroup>
                                     {availableLabels.map((label) => (
+                                      <CommandItem
+                                        key={label}
+                                        value={label}
+                                        onSelect={toggleLabel}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            field.value.includes(label)
+                                              ? "opacity-100"
+                                              : "opacity-0"
+                                          )}
+                                        />
+                                        {label}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                  <CommandGroup>
+                                    {suggestedLabels.map((label) => (
                                       <CommandItem
                                         key={label}
                                         value={label}
@@ -499,6 +542,11 @@ export default function TaskModal({ userId }: { userId: string }) {
                                 />
                               </Badge>
                             ))}
+                            {field.value.length === 0 && (
+                              <span className="text-muted-foreground text-xs">
+                                Aucune étiquette.
+                              </span>
+                            )}
                           </div>
                         </div>
                         <FormMessage />
@@ -506,50 +554,84 @@ export default function TaskModal({ userId }: { userId: string }) {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="archived"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2">
-                        <FormControl>
-                          <Checkbox
-                            id="archived"
-                            checked={field.value}
-                            onCheckedChange={(checked) =>
-                              field.onChange(checked === true)
-                            }
-                          />
-                        </FormControl>
-                        <FormLabel
-                          htmlFor="archived"
-                          className="text-xs font-medium"
+                  <FormItem className="mb-4 overflow-hidden flex flex-col ">
+                    <div className="flex items-center justify-between">
+                      <FormLabel className="block mb-1">Sous-tâches</FormLabel>
+                      <Button
+                        variant="ghost"
+                        className="text-xs p-0"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          openSubTaskModal();
+                        }}
+                      >
+                        <Plus />
+                        Créer
+                      </Button>
+                    </div>
+                    <div className="space-y-2 pr-1 overflow-auto">
+                      {subTaskList.map((subTask, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between bg-background rounded-md border p-2 h-8 text-xs"
                         >
-                          Archive this task
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
+                          <span className="truncate flex-1">
+                            {subTask.name}
+                          </span>
+                          <div className="flex items-center gap-1 ml-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                openSubTaskModal(subTask);
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-destructive"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                deleteSubtask(subTask.uuid!); //TODO fix
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {subTaskList.length === 0 && (
+                        <span className="text-muted-foreground text-xs">
+                          Aucune sous-tâche.
+                        </span>
+                      )}
+                    </div>
+                  </FormItem>
                 </div>
-              </div>
-
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  onClick={closeModal}
-                  className="mr-2 px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  onClick={() => console.log("on click !!", form)}
-                >
-                  {task ? "Update" : "Create"}
-                </Button>
               </div>
             </form>
           </Form>
+          <div className="flex justify-end p-4">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={closeModal}
+              className="mr-2 px-4 py-2 hover:opacity-80"
+            >
+              Annuler
+            </Button>
+            <Button
+              className="px-4 py-2 text-white"
+              type="submit"
+              form="task-form"
+            >
+              {task ? "Enregistrer" : "Créer"}
+            </Button>
+          </div>
         </div>
       </div>
       <SubTaskModal

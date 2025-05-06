@@ -11,7 +11,7 @@ export default async function TaskManagementPage() {
   if (!session?.user) return null;
   const user = session.user as User;
   return (
-    <main className="container mx-auto p-4">
+    <main className="flex flex-col container mx-auto p-4 flex-1">
       <Suspense fallback={<div>Loading tasks...</div>}>
         <TaskBoard userId={user.id} />
       </Suspense>

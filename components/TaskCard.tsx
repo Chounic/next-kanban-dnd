@@ -2,12 +2,13 @@
 
 import { useTaskModal } from "@/hooks/useTaskModal";
 import { Task } from "@/database/kysely";
-import { EllipsisVertical, Pencil, Trash2 } from "lucide-react";
-import { deleteTask } from "@/action/tasks-server";
+import { Archive, EllipsisVertical, Pencil, Trash2 } from "lucide-react";
+import { deleteTask, softDeleteTask } from "@/action/tasks-server";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -16,17 +17,20 @@ import React, { useMemo } from "react";
 interface TaskCardProps {
   task: Task;
   subTasks: Task[];
+  className?: string;
 }
 
 export default function TaskCard({
   task,
   ref,
   overlay = false,
+  className,
   ...props
 }: {
   task: TaskCardProps;
   ref?: React.Ref<HTMLDivElement>;
   overlay?: boolean;
+  className?: string;
 }) {
   const { openModal } = useTaskModal();
 
@@ -40,8 +44,17 @@ export default function TaskCard({
           <DropdownMenuItem onClick={() => openModal(task.task, task.subTasks)}>
             <Pencil /> <span>Modifier</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={async () => deleteTask(task.task.uuid)}>
-            <Trash2 /> <span>Supprimer</span>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={async () => softDeleteTask(task.task.uuid)}
+          >
+            <Archive /> <span>Archiver la tâche</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={async () => deleteTask(task.task.uuid)}
+            className="text-red-500"
+          >
+            <Trash2 /> <span>Supprimer la tâche</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -52,11 +65,14 @@ export default function TaskCard({
     <div
       ref={ref}
       {...props}
-      className="bg-white mb-4 p-4 rounded shadow cursor-pointer hover:shadow-md transition-shadow flex justify-between border-t-2 border-t-gray-200 h-[150px]"
+      className={cn(
+        "bg-white border shadow mb-4 p-4 rounded transition-shadow flex justify-between h-[150px]",
+        className
+      )}
     >
       <div>
         <h3 className="font-semibold">{task.task.name}</h3>
-        <p className="text-sm text-gray-600 truncate ">
+        <p className="text-sm text-gray-600 overflow-hidden line-clamp-3">
           {task.task.description}
         </p>
       </div>
