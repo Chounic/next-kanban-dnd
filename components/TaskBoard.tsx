@@ -20,10 +20,18 @@ export default async function TaskBoard({ userId }: { userId: string }) {
       .where("archived", "=", false)
       .selectAll()
       .execute();
-    tasksWithSubTasks = tasks.map((task) => ({
-      task,
-      subTasks: tasks.filter((t) => t.parentTaskId === task.id),
-    }));
+
+    const taskMap: Record<string, TaskWithSubTasks> = {};
+    for (const task of tasks) {
+      taskMap[task.id] = { task, subTasks: [] };
+    }
+    // Attach subtasks to their parent
+    for (const task of tasks) {
+      if (task.parentTaskId && taskMap[task.parentTaskId]) {
+        taskMap[task.parentTaskId].subTasks.push(taskMap[task.id].task);
+      }
+    }
+    tasksWithSubTasks = Object.values(taskMap);
 
     tasksOrder = await getTasksOrder(userId);
   } catch (e: any) {

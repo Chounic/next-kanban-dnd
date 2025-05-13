@@ -15,7 +15,10 @@ export default function Page() {
       <GoogleAuthButton text="S'inscrire avec Google" />
       <div className="mt-4 text-center text-sm">
         Vous êtes déjà inscrit(e) ?{" "}
-        <Link href="/login" className="underline underline-offset-4">
+        <Link
+          href="/signin"
+          className="underline underline-offset-4 text-primary hover:text-primary/80"
+        >
           Se connecter
         </Link>
       </div>

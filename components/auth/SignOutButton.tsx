@@ -2,13 +2,13 @@
 
 import { Button } from "../ui/button";
 import { toast } from "sonner";
-import { logout } from "@/action/auth-server";
+import { signout } from "@/action/auth-server";
 import { useRouter } from "next/navigation";
 
 export function SignOut() {
   const router = useRouter();
   const handleSignOut = async () => {
-    await logout()
+    await signout()
       .then((data) => {
         if (data?.success) {
           toast(data?.success);
@@ -22,8 +22,11 @@ export function SignOut() {
   };
 
   return (
-    <Button className="bg-gray-800" onClick={handleSignOut}>
-      Logout
+    <Button
+      className="bg-gray-800 hover:bg-gray-800/90"
+      onClick={handleSignOut}
+    >
+      Sign out
     </Button>
   );
 }

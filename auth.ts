@@ -16,7 +16,7 @@ export class CustomError extends CredentialsSignin {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
-    signIn: "/login",
+    signIn: "/signin",
   },
   adapter: new KyselyAdapter(db),
   providers: [
@@ -93,7 +93,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       if (
         auth &&
-        (nextUrl.pathname === "/login" || nextUrl.pathname === "/signup")
+        (nextUrl.pathname === "/signin" || nextUrl.pathname === "/signup")
       ) {
         const newUrl = new URL("/", nextUrl.origin);
         return Response.redirect(newUrl);

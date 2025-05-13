@@ -27,21 +27,21 @@ export default function TasksList({
   order: TasksOrder;
   userId: string;
 }) {
-  const [taskColumns, setTaskColumns] = useState<TasksOrder>({});
+  const [tasksOrder, setTasksOrder] = useState<TasksOrder>({});
 
   useEffect(() => {
-    setTaskColumns(() => {
-      const defaultTaskColumns: TasksOrder = {};
+    setTasksOrder(() => {
+      const defaultTasksOrder: TasksOrder = {};
 
       taskStatusEntries.forEach((taskStatus) => {
         const [key, value] = taskStatus;
 
-        defaultTaskColumns[value] = [];
+        defaultTasksOrder[value] = [];
       });
 
-      const nextTaskColumns = { ...defaultTaskColumns, ...order };
+      const nextTasksOrder = { ...defaultTasksOrder, ...order };
 
-      return nextTaskColumns;
+      return nextTasksOrder;
     });
   }, [tasksWithSubTasks, order]);
 
@@ -59,28 +59,28 @@ export default function TasksList({
       return;
     }
 
-    const targetList = [...(taskColumns[destination.droppableId] || [])];
+    const targetList = [...(tasksOrder[destination.droppableId] || [])];
     let nextTaskColumns: TasksOrder = {};
 
     if (source.droppableId === destination.droppableId) {
       const [removed] = targetList.splice(source.index, 1);
       targetList.splice(destination.index, 0, removed);
       nextTaskColumns = {
-        ...taskColumns,
+        ...tasksOrder,
         [destination.droppableId]: targetList,
       };
 
-      setTaskColumns(nextTaskColumns);
+      setTasksOrder(nextTaskColumns);
     } else {
-      const sourceList = [...(taskColumns[source.droppableId] || [])];
+      const sourceList = [...(tasksOrder[source.droppableId] || [])];
       const [removed] = sourceList.splice(source.index, 1);
       targetList.splice(destination.index, 0, removed);
       nextTaskColumns = {
-        ...taskColumns,
+        ...tasksOrder,
         [source.droppableId]: sourceList,
         [destination.droppableId]: targetList,
       };
-      setTaskColumns(nextTaskColumns);
+      setTasksOrder(nextTaskColumns);
       updateTask({ status: destination.droppableId, uuid: draggableId }, false);
     }
 
@@ -96,7 +96,7 @@ export default function TasksList({
             <div
               key={value}
               className={cn(
-                "border rounded-sm w-1/4 bg-stone-50 p-2  has-[:checked]:ring-blue-600 has-[:checked]:ring-2 has-[:checked]:border-transparent border-gray-300 flex flex-col"
+                "border rounded-sm w-1/4 bg-stone-50 p-2 has-[:checked]:ring-blue-600 has-[:checked]:ring-2 has-[:checked]:border-transparent border-gray-300 flex flex-col"
               )}
             >
               <div className="p-2 min-h-[100px]">
@@ -123,7 +123,7 @@ export default function TasksList({
                         checked={snapshot.isDraggingOver}
                         readOnly
                       />
-                      {taskColumns[value]?.map((id, index) => {
+                      {tasksOrder[value]?.map((id, index) => {
                         const t = tasksWithSubTasks.find(
                           (t) => t.task.uuid === id
                         );

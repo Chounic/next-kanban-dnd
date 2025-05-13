@@ -49,7 +49,7 @@ export const signUp = async (formData: AuthFormSchema) => {
   }
 };
 
-export const login = async (formData: AuthFormSchema) => {
+export const signin = async (formData: AuthFormSchema) => {
   const validatedFields = authFormSchema.safeParse({
     email: formData.email as string,
     password: formData.password as string,
@@ -81,7 +81,7 @@ export const login = async (formData: AuthFormSchema) => {
   }
 };
 
-export const logout = async () => {
+export const signout = async () => {
   try {
     await signOut();
   } catch (error) {

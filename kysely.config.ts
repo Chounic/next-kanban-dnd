@@ -12,7 +12,4 @@ export default defineConfig({
   migrations: {
     migrationFolder: "database/migrations",
   },
-  // seeds: {
-  //   seedFolder: "lib/seeds",
-  // },
 });
