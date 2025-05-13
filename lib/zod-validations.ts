@@ -2,9 +2,17 @@ import { TaskStatus } from "@/utils/registry";
 import { z } from "zod";
 
 export const authFormSchema = z.object({
-  email: z.string().email("L'adresse email n'est pas valide"),
+  email: z
+    .string()
+    .min(1, {
+      message: "Veuillez saisir votre email",
+    })
+    .email("L'adresse email n'est pas valide"),
   password: z
     .string()
+    .min(1, {
+      message: "Veuillez saisir votre mot de passe",
+    })
     .min(8, { message: "Le mot de passe doit contenir au moins 8 caractères" }),
 });
 

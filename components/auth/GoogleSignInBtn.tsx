@@ -12,7 +12,7 @@ export default function GoogleAuthButton({
     <form
       action={async () => {
         "use server";
-        await signIn("google"); //TODO handle errors
+        await signIn("google"); //TODO handle errors and toast display
       }}
       className={className}
     >

@@ -146,7 +146,7 @@ export default function SubTaskModal({
               >
                 Annuler
               </Button>
-              <Button type="submit">
+              <Button type="submit" disabled={!form.formState.isDirty}>
                 {!editedSubTask ? "Créer" : "Enregistrer"}
               </Button>
             </DialogFooter>

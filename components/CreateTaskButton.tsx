@@ -8,7 +8,7 @@ export default function CreateTaskButton() {
 
   return (
     <button
-      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors flex space-x-2"
+      className="bg-blue-800 text-white px-4 py-2 rounded hover:bg-blue-800/90 transition-colors flex space-x-2"
       onClick={() => openModal()}
     >
       <Plus />
