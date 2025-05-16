@@ -41,6 +41,7 @@ export default function TasksList({
 
       const nextTasksOrder = { ...defaultTasksOrder, ...order };
 
+      console.log("🚀 ~ setTasksOrder ~ nextTasksOrder:", nextTasksOrder);
       return nextTasksOrder;
     });
   }, [tasksWithSubTasks, order]);
@@ -84,7 +85,7 @@ export default function TasksList({
       updateTask({ status: destination.droppableId, uuid: draggableId }, false);
     }
 
-    updateTasksOrder(nextTaskColumns, userId);
+    updateTasksOrder(nextTaskColumns, userId, false);
   }
 
   return (

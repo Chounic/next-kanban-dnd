@@ -3,6 +3,7 @@ import SearchBar from "./SearchBar";
 import CreateTaskButton from "./CreateTaskButton";
 import TasksList from "./TasksList";
 import { getTasksOrder } from "@/action/tasks-server";
+import TaskModal from "./TaskModal";
 
 export interface TaskWithSubTasks {
   task: Task;
@@ -49,6 +50,7 @@ export default async function TaskBoard({ userId }: { userId: string }) {
         order={tasksOrder}
         userId={userId}
       />
+      <TaskModal userId={userId} order={tasksOrder} />
     </>
   );
 }

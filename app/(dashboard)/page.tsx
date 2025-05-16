@@ -9,7 +9,6 @@ export default async function TaskManagementPage() {
   return (
     <main className="flex flex-col container mx-auto p-4 flex-1">
       <TaskBoard userId={user.id} />
-      <TaskModal userId={user.id} />
     </main>
   );
 }

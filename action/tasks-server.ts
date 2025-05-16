@@ -70,7 +70,11 @@ export async function getTasksOrder(userUuid: string) {
 
   return data[0]?.order ?? {};
 }
-export async function updateTasksOrder(order: TasksOrder, userUuid: string) {
+export async function updateTasksOrder(
+  order: TasksOrder,
+  userUuid: string,
+  revalidate: boolean = true
+) {
   await db
     .updateTable("tasks_order")
     .set({
@@ -78,6 +82,8 @@ export async function updateTasksOrder(order: TasksOrder, userUuid: string) {
     })
     .where("userId", "=", userUuid)
     .executeTakeFirst();
+
+  if (revalidate) revalidatePath("/");
 }
 
 const openai = new OpenAI({

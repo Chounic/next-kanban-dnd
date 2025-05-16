@@ -9,6 +9,7 @@ import {
   deleteTask,
   suggestTaskMetadata,
   updateTask,
+  updateTasksOrder,
 } from "@/action/tasks-server";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -52,7 +53,13 @@ import {
   CommandList,
 } from "./ui/command";
 import SubTaskModal from "./SubTaskModal";
-import { CreateTask, Task, UpdateTask } from "@/database/kysely";
+import {
+  CreateTask,
+  Task,
+  TasksOrder,
+  TaskStatusType,
+  UpdateTask,
+} from "@/database/kysely";
 import { v4 as uuidv4 } from "uuid";
 
 const availableLabels = [
@@ -64,7 +71,13 @@ const availableLabels = [
   "testing",
 ];
 
-export default function TaskModal({ userId }: { userId: string }) {
+export default function TaskModal({
+  userId,
+  order,
+}: {
+  userId: string;
+  order: TasksOrder;
+}) {
   const { isOpen, closeModal, task, subTasks, openSubTaskModal } =
     useTaskModal();
   const form = useForm<TaskFormSchema>({
@@ -151,12 +164,42 @@ export default function TaskModal({ userId }: { userId: string }) {
     }
   };
 
+  async function handleOrderChange(
+    oldStatus: TaskStatusType,
+    newStatus: TaskStatusType,
+    taskUuid: string
+  ) {
+    const oldStatusOrder = order[oldStatus]?.filter((t) => t !== taskUuid);
+    const newStatusOrder = [...(order[newStatus] || []), taskUuid];
+    await updateTasksOrder(
+      {
+        ...order,
+        [oldStatus]: oldStatusOrder,
+        [newStatus]: newStatusOrder,
+      },
+      userId
+    );
+  }
+
   async function onSubmit(data: TaskFormSchema) {
     if (task) {
       await updateTask({ ...data, uuid: task.uuid });
+      if (task.status !== data.status) {
+        await handleOrderChange(task.status, data.status, task.uuid);
+      }
       for (const subTaskListItem of subTaskList) {
         if ("id" in subTaskListItem) {
           await updateTask(subTaskListItem as UpdateTask);
+          const subTask = subTasks.find(
+            (st) => st.uuid === subTaskListItem.uuid
+          );
+          if (subTask && subTask.status !== subTaskListItem.status) {
+            await handleOrderChange(
+              subTask.status,
+              subTaskListItem.status,
+              subTask.uuid
+            );
+          }
         } else {
           await createTask({
             ...(subTaskListItem as CreateTask),
