@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata = {
   metadataBase: new URL("https://postgres-kysely.vercel.app"),
@@ -23,9 +24,13 @@ export default function RootLayout({
 }) {
   return (
     <html className="h-full" lang="en">
-      <body className={cn("h-full flex flex-col", inter.variable)}>
-        {children}
-        <Toaster richColors />
+      <body
+        className={cn("h-full flex flex-col min-w-[650px]", inter.variable)}
+      >
+        <TooltipProvider>
+          {children}
+          <Toaster richColors />
+        </TooltipProvider>
       </body>
     </html>
   );

@@ -17,7 +17,7 @@ export default function SearchBar() {
       <input
         type="text"
         placeholder="Filter tasks..."
-        className="w-full p-2 border rounded"
+        className="w-full p-2 border rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
         value={search}
         onChange={handleFilter}
       />

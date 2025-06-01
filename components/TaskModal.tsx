@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { useTaskModal } from "@/hooks/useTaskModal";
 import {
@@ -34,6 +34,7 @@ import {
   CalendarIcon,
   Check,
   CircleX,
+  Loader,
   Pencil,
   Plus,
   Settings,
@@ -61,6 +62,8 @@ import {
   UpdateTask,
 } from "@/database/kysely";
 import { v4 as uuidv4 } from "uuid";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
 
 const availableLabels = [
   "bug",
@@ -99,6 +102,7 @@ export default function TaskModal({
     []
   );
   const [suggestedLabels, setSuggestedLabels] = useState<string[]>([]);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (task) {
@@ -109,59 +113,60 @@ export default function TaskModal({
       form.setValue("dueDate", task.dueDate);
       form.setValue("estimatedTime", task.estimatedTime);
       form.setValue("labels", task.labels);
-      form.setValue("archived", task.archived || false);
+      form.setValue("archived", task.archived);
     } else {
       form.reset();
     }
     setSubTaskList(subTasks);
-  }, [form, task /* isOpen */]);
+  }, [form, task, isOpen]);
 
   const fetchAISuggestedValues = async () => {
     const name = form.getValues("name");
     const description = form.getValues("description");
 
     if (!description.trim()) return;
+    startTransition(async () => {
+      try {
+        const metadata = await suggestTaskMetadata(name, description);
+        if (metadata?.tags && metadata?.tags.length > 0) {
+          setSuggestedLabels(metadata?.tags);
+          const currentLabels = form.getValues("labels");
+          const labelsTodAdd: string[] = [];
+          metadata?.tags.forEach((label) => {
+            if (!currentLabels.includes(label)) {
+              labelsTodAdd.push(label);
+            }
+          });
+          form.setValue("labels", [...currentLabels, ...labelsTodAdd]);
+        }
 
-    try {
-      const metadata = await suggestTaskMetadata(name, description);
-      if (metadata?.tags && metadata?.tags.length > 0) {
-        setSuggestedLabels(metadata?.tags);
-        const currentLabels = form.getValues("labels");
-        const labelsTodAdd: string[] = [];
-        metadata?.tags.forEach((label) => {
-          if (!currentLabels.includes(label)) {
-            labelsTodAdd.push(label);
-          }
-        });
-        form.setValue("labels", [...currentLabels, ...labelsTodAdd]);
-      }
+        if (metadata?.priority && metadata?.priority !== null) {
+          form.setValue("priority", metadata.priority);
+        }
 
-      if (metadata?.priority && metadata?.priority !== null) {
-        form.setValue("priority", metadata.priority);
-      }
+        if (metadata?.dueDate && metadata?.dueDate !== null) {
+          form.setValue("dueDate", metadata.dueDate);
+        }
 
-      if (metadata?.dueDate && metadata?.dueDate !== null) {
-        form.setValue("dueDate", metadata.dueDate);
-      }
+        if (metadata?.estimatedTime && metadata?.estimatedTime !== null) {
+          form.setValue("estimatedTime", metadata.estimatedTime);
+        }
 
-      if (metadata?.estimatedTime && metadata?.estimatedTime !== null) {
-        form.setValue("estimatedTime", metadata.estimatedTime);
+        if (metadata?.subtasks && metadata?.subtasks.length > 0) {
+          metadata.subtasks.forEach((subTask) => {
+            const newSubTask = {
+              name: subTask,
+              description: "",
+              status: "backlog",
+              uuid: uuidv4(),
+            };
+            addSubTask(newSubTask);
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch suggested labels:", error);
       }
-
-      if (metadata?.subtasks && metadata?.subtasks.length > 0) {
-        metadata.subtasks.forEach((subTask) => {
-          const newSubTask = {
-            name: subTask,
-            description: "",
-            status: "backlog",
-            uuid: uuidv4(),
-          };
-          addSubTask(newSubTask);
-        });
-      }
-    } catch (error) {
-      console.error("Failed to fetch suggested labels:", error);
-    }
+    });
   };
 
   async function handleOrderChange(
@@ -268,34 +273,14 @@ export default function TaskModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div className="bg-white p-6 rounded-lg w-full max-w-3xl h-[95vh] flex flex-col">
+      <Dialog open={isOpen} onOpenChange={closeModal}>
+        <DialogContent className=" p-6 rounded-lg w-full max-w-3xl h-[95vh] flex flex-col">
           <div className="flex justify-between mb-2">
             <div className="flex items-center gap-10">
-              <h2 className="text-xl font-semibold">
+              <DialogTitle className="text-xl font-semibold">
                 {task ? "Éditer la tâche" : "Nouvelle tâche"}
-              </h2>
-              {/*  
-              - create AI buttons to trigger openAi data fetching for each field 
-              - create AI settings modal to set fields applied to global AI button 
-              */}
-
-              <Button
-                variant="ghost"
-                className="hover:bg-transparent p-0 mt-1"
-                onClick={fetchAISuggestedValues}
-              >
-                <Sparkles size={16} className="" />
-                <span className="italic text-sm">Remplir les champs</span>
-              </Button>
+              </DialogTitle>
             </div>
-            <Button
-              variant="ghost"
-              className="hover:bg-transparent"
-              onClick={closeModal}
-            >
-              <X size={32} className="!size-6" />
-            </Button>
           </div>
           <Form {...form}>
             <form
@@ -312,13 +297,7 @@ export default function TaskModal({
                       name="name"
                       render={({ field }) => (
                         <FormItem className="mb-4">
-                          <FormLabel className="block mb-1">
-                            Titre{" "}
-                            <span className="text-xs text-gray-800  font-normal">
-                              (utilisé pour remplir les autres champs{" "}
-                              <Sparkles size={12} className="inline" />)
-                            </span>
-                          </FormLabel>
+                          <FormLabel className="block mb-1">Titre</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
@@ -333,13 +312,9 @@ export default function TaskModal({
                       control={form.control}
                       name="description"
                       render={({ field }) => (
-                        <FormItem className="mb-4 flex-1 flex flex-col">
+                        <FormItem className=" flex-1 flex flex-col pb-1">
                           <FormLabel className="block mb-1">
                             Description{" "}
-                            <span className="text-xs text-gray-800  font-normal">
-                              (utilisé pour remplir les autres champs{" "}
-                              <Sparkles size={12} className="inline" />)
-                            </span>
                           </FormLabel>
                           <FormControl>
                             <Textarea
@@ -355,305 +330,412 @@ export default function TaskModal({
                 </div>
 
                 {/* Properties - right side */}
-                <div className="md:w-[300px] p-6 space-y-4 bg-muted/20 flex flex-col">
-                  <div className="grid grid-cols-2 gap-2">
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem className="mb-4">
-                          <FormLabel className="block mb-1">Statut</FormLabel>
-                          <FormControl>
-                            <select
-                              {...field}
-                              className="w-full px-2 border rounded h-7"
-                              onChange={(e) => field.onChange(e.target.value)}
-                              value={field.value}
-                            >
-                              <option value="backlog">Backlog</option>
-                              <option value="ready">Ready</option>
-                              <option value="in-progress">In Progress</option>
-                              <option value="done">Done</option>
-                            </select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="priority"
-                      render={({ field }) => (
-                        <FormItem className="mb-4">
-                          <FormLabel className="block mb-1">
-                            Importance
-                          </FormLabel>
-                          <FormControl>
-                            <select
-                              {...field}
-                              className="w-full px-2 border rounded h-7"
-                              onChange={(e) => field.onChange(e.target.value)}
-                              value={field.value}
-                            >
-                              <option value="low">Basse</option>
-                              <option value="medium">Medium</option>
-                              <option value="high">Haute</option>
-                              <option value="urgent">Urgent</option>
-                            </select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <div className="md:w-[300px] py-6 pl-6 space-y-4 bg-muted/20 flex flex-col overflow-auto">
+                  <div className="mb-10 flex justify-end pr-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className={cn(
+                            "h-9 p-2 animate-ping-once border-gray-700",
+                            isPending && " opacity-50"
+                          )}
+                          onClick={fetchAISuggestedValues}
+                          disabled={isPending}
+                          aria-label="Remplir les champs avec l'IA"
+                        >
+                          {isPending ? (
+                            <div className="size-3 rounded-full animate-spin border-y border-solid border-gray-800 border-t-transparent shadow-gray-50 shadow-md"></div>
+                          ) : (
+                            <Sparkles />
+                          )}
+                          <span className="italic text-sm">Suggérer</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="bottom"
+                        sideOffset={10}
+                        className="bg-gray-800"
+                      >
+                        Basé sur les champs "titre" et "description"
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
-
-                  <FormField
-                    control={form.control}
-                    name="dueDate"
-                    render={({ field }) => {
-                      return (
-                        <FormItem className="flex flex-col !mt-2">
-                          <FormLabel>Écheance</FormLabel>
-                          <Popover
-                            open={openDueDatePopover}
-                            onOpenChange={setOpenDueDatePopover}
-                          >
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant={"outline"}
+                  <div className="overflow-y-auto flex-1 pr-2 pl-1">
+                    <div className="grid grid-cols-2 gap-2">
+                      <FormField
+                        control={form.control}
+                        name="status"
+                        render={({ field }) => (
+                          <FormItem className="mb-4">
+                            <div className="flex items-center gap-3">
+                              <FormLabel
                                 className={cn(
-                                  " pl-3 text-left font-normal flex justify-between h-7",
-                                  !field.value && "text-muted-foreground"
+                                  "block mb-1 ",
+                                  isPending && " opacity-50"
                                 )}
                               >
-                                {field.value ? (
-                                  <>
-                                    <span>{format(field.value, "PPP")}</span>
-                                    <div
-                                      onClick={(e) => (
-                                        e.stopPropagation(),
-                                        form.resetField("dueDate")
+                                Statut
+                              </FormLabel>
+                              {isPending && (
+                                <div className="w-4 h-4 rounded-full animate-spin border-y border-solid border-gray-800 border-t-transparent shadow-gray-50 shadow-md"></div>
+                              )}
+                            </div>{" "}
+                            <FormControl>
+                              <select
+                                {...field}
+                                className="w-full px-2 border rounded h-9 cursor-pointer focus-visible:outline-none focus-visible:ring-ring     "
+                                onChange={(e) => field.onChange(e.target.value)}
+                                value={field.value}
+                              >
+                                <option value="backlog">Backlog</option>
+                                <option value="ready">Ready</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="done">Done</option>
+                              </select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="priority"
+                        render={({ field }) => (
+                          <FormItem className="mb-4">
+                            <div className="flex items-center gap-3">
+                              <FormLabel
+                                className={cn(
+                                  "block mb-1 ",
+                                  isPending && " opacity-50"
+                                )}
+                              >
+                                Importance
+                              </FormLabel>
+                              {isPending && (
+                                <div className="w-4 h-4 rounded-full animate-spin border-y border-solid border-gray-800 border-t-transparent shadow-gray-50 shadow-md"></div>
+                              )}
+                            </div>{" "}
+                            <FormControl>
+                              <select
+                                {...field}
+                                className="w-full px-2 border rounded h-9 cursor-pointer focus-visible:outline-none focus-visible:ring-ring focus-visible:ring-2"
+                                onChange={(e) => field.onChange(e.target.value)}
+                                value={field.value}
+                              >
+                                <option value="low">Basse</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">Haute</option>
+                                <option value="urgent">Urgent</option>
+                              </select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="dueDate"
+                      render={({ field }) => {
+                        return (
+                          <FormItem className="flex flex-col !mt-2 mb-4">
+                            <div className="flex items-center gap-3">
+                              <FormLabel
+                                className={cn(
+                                  "block mb-1 ",
+                                  isPending && " opacity-50"
+                                )}
+                              >
+                                Échéance
+                              </FormLabel>
+                              {isPending && (
+                                <div className="w-4 h-4 rounded-full animate-spin border-y border-solid border-gray-800 border-t-transparent shadow-gray-50 shadow-md"></div>
+                              )}
+                            </div>{" "}
+                            <Popover
+                              open={openDueDatePopover}
+                              onOpenChange={setOpenDueDatePopover}
+                            >
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    " pl-3 text-left font-normal flex justify-between h-9 cursor-pointer",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    <>
+                                      <span>{format(field.value, "PPP")}</span>
+                                      <div
+                                        className="hover:opacity-80"
+                                        onClick={(e) => (
+                                          e.stopPropagation(),
+                                          form.resetField("dueDate")
+                                        )}
+                                      >
+                                        <CircleX className="h-4 w-4 " />
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span>Choisir une date</span>
+                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </>
+                                  )}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                              >
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value ?? undefined}
+                                  onSelect={(date) => {
+                                    field.onChange(date);
+                                    setOpenDueDatePopover(false);
+                                  }}
+                                  disabled={(date) => date < new Date()}
+                                  initialFocus
+                                  defaultMonth={field.value ?? new Date()}
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </FormItem>
+                        );
+                      }}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="estimatedTime"
+                      render={({ field }) => (
+                        <FormItem className="mb-4">
+                          <div className="flex items-center gap-3">
+                            <FormLabel
+                              className={cn(
+                                "block mb-1 ",
+                                isPending && " opacity-50"
+                              )}
+                            >
+                              Temps estimé (jours)
+                            </FormLabel>
+                            {isPending && (
+                              <div className="w-4 h-4 rounded-full animate-spin border-y border-solid border-gray-800 border-t-transparent shadow-gray-50 shadow-md"></div>
+                            )}
+                          </div>{" "}
+                          <FormControl>
+                            <Input
+                              {...field}
+                              className="w-full p-2 border rounded bg-white !h-9"
+                              type="number"
+                              min={0}
+                              step={1}
+                              value={field.value ?? ""}
+                              placeholder="Enter days"
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                field.onChange(value ? Number(value) : null);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="labels"
+                      render={({ field }) => (
+                        <FormItem className="mb-4">
+                          <FormControl>
+                            <Popover
+                              open={openLabelsPopover}
+                              onOpenChange={(isOpen) => {
+                                setOpenLabelsPopover(isOpen);
+                              }}
+                              {...field}
+                            >
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="w-full justify-between text-xs h-8 py-0 pl-0"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <FormLabel
+                                      className={cn(
+                                        "block mb-1 cursor-pointer",
+                                        isPending && " opacity-50"
                                       )}
                                     >
-                                      <CircleX className="h-4 w-4" />
-                                    </div>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span>Choisir une date</span>
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </>
-                                )}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-auto p-0"
-                              align="start"
-                            >
-                              <Calendar
-                                mode="single"
-                                selected={field.value ?? undefined}
-                                onSelect={(date) => {
-                                  field.onChange(date);
-                                  setOpenDueDatePopover(false);
-                                }}
-                                disabled={(date) => date < new Date()}
-                                initialFocus
-                                defaultMonth={field.value ?? new Date()}
-                              />
-                            </PopoverContent>
-                          </Popover>
+                                      Étiquettes
+                                    </FormLabel>
+                                    {isPending && (
+                                      <div className="w-4 h-4 rounded-full animate-spin border-y border-solid border-gray-800 border-t-transparent shadow-gray-50 shadow-md"></div>
+                                    )}
+                                  </div>{" "}
+                                  {!isPending && (
+                                    <span>
+                                      <Settings />
+                                    </span>
+                                  )}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[200px] p-0">
+                                <Command>
+                                  <CommandInput placeholder="Search labels..." />
+                                  <CommandList>
+                                    <CommandEmpty>
+                                      Aucune étiquette trouvée.
+                                    </CommandEmpty>
+                                    <CommandGroup>
+                                      {availableLabels.map((label) => (
+                                        <CommandItem
+                                          className="cursor-pointer"
+                                          key={label}
+                                          value={label}
+                                          onSelect={toggleLabel}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              field.value.includes(label)
+                                                ? "opacity-100"
+                                                : "opacity-0"
+                                            )}
+                                          />
+                                          {label}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                    <CommandGroup>
+                                      {suggestedLabels.map((label) => (
+                                        <CommandItem
+                                          key={label}
+                                          value={label}
+                                          onSelect={toggleLabel}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              field.value.includes(label)
+                                                ? "opacity-100"
+                                                : "opacity-0"
+                                            )}
+                                          />
+                                          {label}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          </FormControl>
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {field.value.map((label) => (
+                                <Badge
+                                  key={label}
+                                  variant="secondary"
+                                  className="flex items-center gap-1"
+                                >
+                                  {label}
+                                  <X
+                                    className="h-3 w-3 cursor-pointer"
+                                    onClick={() => removeLabel(label)}
+                                  />
+                                </Badge>
+                              ))}
+                              {field.value.length === 0 && (
+                                <span className="text-muted-foreground text-xs">
+                                  Aucune étiquette.
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <FormMessage />
                         </FormItem>
-                      );
-                    }}
-                  />
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="estimatedTime"
-                    render={({ field }) => (
-                      <FormItem className="mb-4">
-                        <FormLabel className="block mb-1">
-                          Temps estimé (jours)
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            className="w-full p-2 border rounded bg-white !h-7"
-                            type="number"
-                            min={0}
-                            step={1}
-                            value={field.value ?? ""}
-                            placeholder="Enter days"
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              field.onChange(value ? Number(value) : null);
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="labels"
-                    render={({ field }) => (
-                      <FormItem className="mb-4">
-                        <FormControl>
-                          <Popover
-                            open={openLabelsPopover}
-                            onOpenChange={(isOpen) => {
-                              setOpenLabelsPopover(isOpen);
-                            }}
-                            {...field}
+                    <FormItem className="mb-4 flex flex-col ">
+                      <div className="flex items-center justify-between h-9">
+                        <div className="flex items-center gap-3">
+                          <FormLabel
+                            className={cn(
+                              "block mb-1 ",
+                              isPending && " opacity-50"
+                            )}
                           >
-                            <PopoverTrigger asChild>
+                            Sous-tâches
+                          </FormLabel>
+                          {isPending && (
+                            <div className="w-4 h-4 rounded-full animate-spin border-y border-solid border-gray-800 border-t-transparent shadow-gray-50 shadow-md"></div>
+                          )}
+                        </div>{" "}
+                        {!isPending && (
+                          <Button
+                            variant="ghost"
+                            className="text-xs py-0 pl-0"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              openSubTaskModal();
+                            }}
+                          >
+                            <Plus />
+                            Créer
+                          </Button>
+                        )}
+                      </div>
+                      <div className="space-y-2 pr-1">
+                        {subTaskList?.map((subTask, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between bg-background rounded-md border p-2 h-8 text-xs"
+                          >
+                            <span className="truncate flex-1">
+                              {subTask.name}
+                            </span>
+                            <div className="flex items-center gap-1 ml-2">
                               <Button
                                 variant="ghost"
-                                className="w-full justify-between text-xs h-8 p-0"
+                                size="icon"
+                                className="h-6 w-6 hover:bg-transparent hover:opacity-80"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  openSubTaskModal(subTask);
+                                }}
                               >
-                                <FormLabel>Étiquettes</FormLabel>
-                                <span>
-                                  <Settings />
-                                </span>
+                                <Pencil className="h-3.5 w-3.5" />
                               </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[200px] p-0">
-                              <Command>
-                                <CommandInput placeholder="Search labels..." />
-                                <CommandList>
-                                  <CommandEmpty>
-                                    Aucune étiquette trouvée.
-                                  </CommandEmpty>
-                                  <CommandGroup>
-                                    {availableLabels.map((label) => (
-                                      <CommandItem
-                                        key={label}
-                                        value={label}
-                                        onSelect={toggleLabel}
-                                      >
-                                        <Check
-                                          className={cn(
-                                            "mr-2 h-4 w-4",
-                                            field.value.includes(label)
-                                              ? "opacity-100"
-                                              : "opacity-0"
-                                          )}
-                                        />
-                                        {label}
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                  <CommandGroup>
-                                    {suggestedLabels.map((label) => (
-                                      <CommandItem
-                                        key={label}
-                                        value={label}
-                                        onSelect={toggleLabel}
-                                      >
-                                        <Check
-                                          className={cn(
-                                            "mr-2 h-4 w-4",
-                                            field.value.includes(label)
-                                              ? "opacity-100"
-                                              : "opacity-0"
-                                          )}
-                                        />
-                                        {label}
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                        </FormControl>
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            {field.value.map((label) => (
-                              <Badge
-                                key={label}
-                                variant="secondary"
-                                className="flex items-center gap-1"
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-destructive hover:bg-transparent hover:text-destructive/80"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  deleteSubtask(subTask.uuid!); //TODO fix
+                                }}
                               >
-                                {label}
-                                <X
-                                  className="h-3 w-3 cursor-pointer"
-                                  onClick={() => removeLabel(label)}
-                                />
-                              </Badge>
-                            ))}
-                            {field.value.length === 0 && (
-                              <span className="text-muted-foreground text-xs">
-                                Aucune étiquette.
-                              </span>
-                            )}
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormItem className="mb-4 overflow-hidden flex flex-col ">
-                    <div className="flex items-center justify-between">
-                      <FormLabel className="block mb-1">Sous-tâches</FormLabel>
-                      <Button
-                        variant="ghost"
-                        className="text-xs p-0"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          openSubTaskModal();
-                        }}
-                      >
-                        <Plus />
-                        Créer
-                      </Button>
-                    </div>
-                    <div className="space-y-2 pr-1 overflow-auto">
-                      {subTaskList.map((subTask, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between bg-background rounded-md border p-2 h-8 text-xs"
-                        >
-                          <span className="truncate flex-1">
-                            {subTask.name}
+                        ))}
+                        {subTaskList?.length === 0 && (
+                          <span className="text-muted-foreground text-xs">
+                            Aucune sous-tâche.
                           </span>
-                          <div className="flex items-center gap-1 ml-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                openSubTaskModal(subTask);
-                              }}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-destructive"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                deleteSubtask(subTask.uuid!); //TODO fix
-                              }}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                      {subTaskList.length === 0 && (
-                        <span className="text-muted-foreground text-xs">
-                          Aucune sous-tâche.
-                        </span>
-                      )}
-                    </div>
-                  </FormItem>
+                        )}
+                      </div>
+                    </FormItem>
+                  </div>
                 </div>
               </div>
             </form>
@@ -663,7 +745,7 @@ export default function TaskModal({
               type="button"
               variant="secondary"
               onClick={closeModal}
-              className="mr-2 px-4 py-2 hover:opacity-80"
+              className="mr-2 px-4 py-2 hover:opacity-70"
             >
               Annuler
             </Button>
@@ -675,8 +757,8 @@ export default function TaskModal({
               {task ? "Enregistrer" : "Créer"}
             </Button>
           </div>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
       <SubTaskModal
         onSubTaskCreate={addSubTask}
         onSubTaskUpdate={updateSubTask}

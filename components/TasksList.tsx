@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { updateTask, updateTasksOrder } from "@/action/tasks-server";
 import { TaskWithSubTasks } from "./TaskBoard";
 import { Squircle } from "lucide-react";
+import TaskModal from "./TaskModal";
 
 const taskStatusEntries = Object.entries(TaskStatus);
 
@@ -88,6 +89,13 @@ export default function TasksList({
     updateTasksOrder(nextTaskColumns, userId, false);
   }
 
+  function getCurrentStatus(taskUuid: string) {
+    const status = Object.keys(tasksOrder).find((status) =>
+      tasksOrder[status]?.includes(taskUuid)
+    );
+    return status;
+  }
+
   return (
     <div className="flex gap-1 flex-1">
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -97,10 +105,10 @@ export default function TasksList({
             <div
               key={value}
               className={cn(
-                "border rounded-sm w-1/4 bg-stone-50 p-2 has-[:checked]:ring-blue-600 has-[:checked]:ring-2 has-[:checked]:border-transparent border-gray-300 flex flex-col"
+                "border rounded-sm w-1/4 bg-stone-50 has-[:checked]:ring-blue-600 has-[:checked]:ring-2 has-[:checked]:border-transparent border-gray-300 flex flex-col"
               )}
             >
-              <div className="p-2 min-h-[100px]">
+              <div className="p-4 min-h-[100px] sticky top-0 z-10 bg-stone-50 border-b-2 ">
                 <div className="flex items-center gap-1 mb-2">
                   <Squircle size={16} />
                   <h2 className="font-semibold">{toTitleCase(key)}</h2>
@@ -116,7 +124,7 @@ export default function TasksList({
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className="flex-1"
+                      className="flex-1 p-2"
                     >
                       <input
                         type="checkbox"
@@ -124,9 +132,9 @@ export default function TasksList({
                         checked={snapshot.isDraggingOver}
                         readOnly
                       />
-                      {tasksOrder[value]?.map((id, index) => {
+                      {tasksOrder[value]?.map((taskUuid, index) => {
                         const t = tasksWithSubTasks.find(
-                          (t) => t.task.uuid === id
+                          (t) => t.task.uuid === taskUuid
                         );
 
                         return t ? (
@@ -140,7 +148,15 @@ export default function TasksList({
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                task={t}
+                                task={{
+                                  ...t,
+                                  task: {
+                                    ...t.task,
+                                    status:
+                                      getCurrentStatus(t.task.uuid) ??
+                                      t.task.status,
+                                  },
+                                }}
                                 className={cn(
                                   "",
                                   snapshot.isDragging
@@ -161,6 +177,7 @@ export default function TasksList({
           );
         })}
       </DragDropContext>
+      <TaskModal userId={userId} order={tasksOrder} />
     </div>
   );
 }

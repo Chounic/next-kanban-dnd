@@ -18,6 +18,7 @@ import { Button } from "./ui/button";
 import { taskFormBaseSchema, TaskFormBaseSchema } from "@/lib/zod-validations";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -34,7 +35,7 @@ export default function SubTaskModal({
   onSubTaskCreate: (t: TaskFormBaseSchema) => void;
   onSubTaskUpdate: (t: TaskFormBaseSchema) => void;
 }) {
-  const { isSubTaskModalOpen, closeSubTaskModal, editedSubTask } =
+  const { closeSubTaskModal, editedSubTask, isSubTaskModalOpen } =
     useTaskModal();
 
   const form = useForm<TaskFormBaseSchema>({
@@ -43,7 +44,6 @@ export default function SubTaskModal({
       name: "",
       description: "",
       status: "backlog",
-      uuid: uuidv4(), // we need an identifier to update subTasks
     },
   });
 
@@ -55,8 +55,9 @@ export default function SubTaskModal({
       form.setValue("uuid", editedSubTask.uuid);
     } else {
       form.reset();
+      form.setValue("uuid", uuidv4());
     }
-  }, [form, editedSubTask]);
+  }, [form, editedSubTask, isSubTaskModalOpen]);
 
   async function onSubmit(data: TaskFormBaseSchema) {
     if (editedSubTask) {
@@ -79,6 +80,7 @@ export default function SubTaskModal({
                   ? "Nouvelle sous-tâche"
                   : "Éditer la sous-tâche"}
               </DialogTitle>
+              <DialogClose className="test-red-500" />
               <DialogDescription>
                 Cette tâche est une sous-tâche de la tâche parente créée/éditée
               </DialogDescription>
@@ -123,7 +125,7 @@ export default function SubTaskModal({
                     <FormControl>
                       <select
                         {...field}
-                        className="w-full p-2 border rounded"
+                        className="w-full p-2 border rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onChange={(e) => field.onChange(e.target.value)}
                         value={field.value}
                       >

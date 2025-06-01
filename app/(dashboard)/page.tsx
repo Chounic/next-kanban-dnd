@@ -1,5 +1,4 @@
 import TaskBoard from "@/components/TaskBoard";
-import TaskModal from "@/components/TaskModal";
 import { auth } from "@/auth";
 
 export default async function TaskManagementPage() {
