@@ -29,6 +29,11 @@ export default function TasksList({
   userId: string;
 }) {
   const [tasksOrder, setTasksOrder] = useState<TasksOrder>({});
+  const columnsGap = 4;
+  const numberOfColumns = taskStatusEntries.length;
+  const columnWidth = `calc(${100 / numberOfColumns}% - ${
+    (columnsGap * (numberOfColumns - 1)) / numberOfColumns
+  }px)`;
 
   useEffect(() => {
     setTasksOrder(() => {
@@ -97,20 +102,28 @@ export default function TasksList({
   }
 
   return (
-    <div className="flex gap-1 flex-1">
+    <div
+      style={{
+        gap: columnsGap,
+      }}
+      className="flex flex-1"
+    >
       <DragDropContext onDragEnd={handleDragEnd}>
         {taskStatusEntries.map((taskStatus) => {
           const [key, value] = taskStatus;
           return (
             <div
               key={value}
+              style={{
+                width: columnWidth,
+              }}
               className={cn(
-                "border rounded-sm w-1/4 bg-stone-50 has-[:checked]:ring-blue-600 has-[:checked]:ring-2 has-[:checked]:border-transparent border-gray-300 flex flex-col"
+                "border rounded-sm bg-stone-50 has-[:checked]:ring-blue-600 has-[:checked]:ring-2 has-[:checked]:border-transparent border-gray-300 flex flex-col"
               )}
             >
               <div className="p-4 min-h-[100px] sticky top-0 z-10 bg-stone-50 border-b-2 ">
-                <div className="flex items-center gap-1 mb-2">
-                  <Squircle size={16} />
+                <div className="flex items-center gap-1 mb-2 text-sm">
+                  <Squircle size={16} className="hidden sm:block" />
                   <h2 className="font-semibold">{toTitleCase(key)}</h2>
                 </div>
                 {/* <div className="text-sm text-gray-500">
@@ -124,7 +137,7 @@ export default function TasksList({
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className="flex-1 p-2"
+                      className="flex-1 p-1 sm:p-2"
                     >
                       <input
                         type="checkbox"

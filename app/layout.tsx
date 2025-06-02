@@ -24,9 +24,7 @@ export default function RootLayout({
 }) {
   return (
     <html className="h-full" lang="en">
-      <body
-        className={cn("h-full flex flex-col min-w-[650px]", inter.variable)}
-      >
+      <body className={cn("h-full flex flex-col", inter.variable)}>
         <TooltipProvider>
           {children}
           <Toaster richColors />

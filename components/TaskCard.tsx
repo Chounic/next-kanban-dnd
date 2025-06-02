@@ -58,7 +58,7 @@ export default function TaskCard({
     return (
       <DropdownMenu>
         <DropdownMenuTrigger className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ">
-          <EllipsisVertical />
+          <EllipsisVertical className="rotate-90 sm:rotate-0" />
         </DropdownMenuTrigger>
         <DropdownMenuContent>
           <DropdownMenuItem onClick={() => openModal(mainTask, subTasks)}>
@@ -85,15 +85,15 @@ export default function TaskCard({
         ref={ref}
         {...props}
         className={cn(
-          "bg-white border shadow mb-4 p-4 rounded transition-shadow flex justify-between h-[150px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ",
+          "bg-white border shadow mb-4 p-1 sm:p-4 rounded transition-shadow sm:flex-row flex flex-col justify-between h-[120px] sm:h-[150px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring items-center sm:items-stretch overflow-hidden",
           className
         )}
       >
-        <div>
-          <h3 className="font-semibold overflow-hidden line-clamp-2">
+        <div className="overflow-hidden w-full">
+          <h3 className="font-semibold overflow-hidden line-clamp-2 text-xs sm:text-base">
             {mainTask.name}
           </h3>
-          <p className="text-sm text-gray-600 overflow-hidden line-clamp-3">
+          <p className="text-sm text-gray-600 overflow-hidden sm:line-clamp-3 hidden">
             {mainTask.description}
           </p>
         </div>

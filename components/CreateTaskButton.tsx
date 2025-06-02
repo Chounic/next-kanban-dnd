@@ -12,7 +12,7 @@ export default function CreateTaskButton() {
       onClick={() => openModal()}
     >
       <Plus />
-      <span>Ajouter une tâche</span>
+      <span className="hidden sm:block">Ajouter une tâche</span>
     </button>
   );
 }

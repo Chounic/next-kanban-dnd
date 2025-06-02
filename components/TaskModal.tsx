@@ -288,9 +288,9 @@ export default function TaskModal({
               onSubmit={form.handleSubmit(onSubmit)}
               className="flex-1 flex flex-col overflow-hidden"
             >
-              <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+              <div className="flex flex-col md:flex-row flex-1 overflow-auto sm:overflow-hidden">
                 {/* Main content - left side */}
-                <div className="flex-1 px-6 pt-6 flex flex-col">
+                <div className="flex-1 px-2 sm:px-6 pt-6 flex flex-col">
                   <div className="space-y-2 flex-1 flex flex-col">
                     <FormField
                       control={form.control}
@@ -319,8 +319,8 @@ export default function TaskModal({
                           <FormControl>
                             <Textarea
                               {...field}
-                              className="w-full p-2 border rounded flex-1"
-                            />
+                              className="w-full p-2 border rounded sm:flex-1"
+                            /> 
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -330,7 +330,7 @@ export default function TaskModal({
                 </div>
 
                 {/* Properties - right side */}
-                <div className="md:w-[300px] py-6 pl-6 space-y-4 bg-muted/20 flex flex-col overflow-auto">
+                <div className="md:w-[300px] pl-2 py-6 sm:pl-6 space-y-4 bg-muted/20 flex flex-col sm:overflow-auto">
                   <div className="mb-10 flex justify-end pr-2">
                     <Tooltip>
                       <TooltipTrigger asChild>

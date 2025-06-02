@@ -13,7 +13,7 @@ export default function SearchBar() {
   };
 
   return (
-    <div className="mb-4">
+    <div>
       <input
         type="text"
         placeholder="Filter tasks..."

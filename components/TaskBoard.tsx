@@ -40,7 +40,7 @@ export default async function TaskBoard({ userId }: { userId: string }) {
 
   return (
     <>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-16">
         <SearchBar />
         <CreateTaskButton />
       </div>
