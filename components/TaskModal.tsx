@@ -118,7 +118,7 @@ export default function TaskModal({
       form.reset();
     }
     setSubTaskList(subTasks);
-  }, [form, task, isOpen]);
+  }, [form, task, subTasks, isOpen]);
 
   const fetchAISuggestedValues = async () => {
     const name = form.getValues("name");
@@ -358,7 +358,8 @@ export default function TaskModal({
                         sideOffset={10}
                         className="bg-gray-800"
                       >
-                        Basé sur les champs "titre" et "description"
+                        Basé sur les champs &quot;titre&quot; et
+                        &quot;description&quot;
                       </TooltipContent>
                     </Tooltip>
                   </div>
