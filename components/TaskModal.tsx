@@ -34,7 +34,6 @@ import {
   CalendarIcon,
   Check,
   CircleX,
-  Loader,
   Pencil,
   Plus,
   Settings,
@@ -372,16 +371,10 @@ export default function TaskModal({
                           <FormItem className="mb-4">
                             <div className="flex items-center gap-3">
                               <FormLabel
-                                className={cn(
-                                  "block mb-1 ",
-                                  isPending && " opacity-50"
-                                )}
+                                className="block mb-1"
                               >
                                 Statut
                               </FormLabel>
-                              {isPending && (
-                                <div className="w-4 h-4 rounded-full animate-spin border-y border-solid border-gray-800 border-t-transparent shadow-gray-50 shadow-md"></div>
-                              )}
                             </div>{" "}
                             <FormControl>
                               <select
