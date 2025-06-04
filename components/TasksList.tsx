@@ -121,7 +121,7 @@ export default function TasksList({
                 "border rounded-sm bg-stone-50 has-[:checked]:ring-blue-600 has-[:checked]:ring-2 has-[:checked]:border-transparent border-gray-300 flex flex-col"
               )}
             >
-              <div className="p-4 min-h-[100px] sticky top-0 z-10 bg-stone-50 border-b-2 ">
+              <div className="p-4 min-h-[100px] sticky top-0 z-10 border-b-2 ">
                 <div className="flex items-center gap-1 mb-2 text-sm">
                   <Squircle size={16} className="hidden sm:block" />
                   <h2 className="font-semibold">{toTitleCase(key)}</h2>
