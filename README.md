@@ -1,57 +1,89 @@
----
-name: Postgres + Kysely Next.js Starter
-slug: postgres-kysely
-description: Simple Next.js template that uses a Postgres database and Kysely as the query builder.
-framework: Next.js
-useCase: Starter
-css: Tailwind
-database: Postgres
-deployUrl: https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fexamples%2Ftree%2Fmain%2Fstorage%2Fpostgres-kysely&project-name=postgres-kysely&repository-name=postgres-kysely&demo-title=Vercel%20Postgres%20%2B%20Kysely%20Next.js%20Starter&demo-description=Simple%20Next.js%20template%20that%20uses%20Vercel%20Postgres%20as%20the%20database%20and%20Kysely%20as%20the%20ORM.&demo-url=https%3A%2F%2Fpostgres-kysely.vercel.app%2F&demo-image=https%3A%2F%2Fpostgres-kysely.vercel.app%2Fopengraph-image.png&products=%5B%7B%22type%22%3A%22integration%22%2C%22group%22%3A%22postgres%22%7D%5D
-demoUrl: https://postgres-kysely.vercel.app/
-relatedTemplates:
-  - postgres-starter
-  - postgres-prisma
-  - postgres-sveltekit
----
+# Kanban Task Manager – Next.js, Kysely & Postgres
 
-# Postgres + Kysely Next.js Starter
+Welcome to this Kanban task manager built with Next.js, Kysely, and Postgres.
 
-Simple Next.js template that uses a Postgres database and [Kysely](https://kysely.dev/) as the query builder.
+## 🚀 Project Overview
 
-## Demo
+- **Type**: Kanban application (task management by columns)
+- **Stack**: Next.js 14, TypeScript, Kysely (query builder), PostgreSQL, TailwindCSS, shadcn/ui, Auth.js (NextAuth.js), @hello-pangea/dnd
+- **Main features**:
+  - Secure authentication (Auth.js)
+  - Create, edit, delete tasks and subtasks
+  - Smooth drag & drop between columns (@hello-pangea/dnd)
+  - Accessible modals and menus (focus, keyboard, ARIA)
+  - Responsive design
 
-https://postgres-kysely.vercel.app/
+## 🛠️ Technologies Used
 
-## How to Use
+- **Next.js**: Modern React framework for SSR/SSG
+- **TypeScript**: Static typing for reliability
+- **Kysely**: Type-safe ORM for Postgres
+- **Postgres**: Relational database
+- **TailwindCSS**: Fast and responsive design
+- **shadcn/ui**: Accessible and stylish components
+- **NextAuth.js**: Secure authentication
+- **@hello-pangea/dnd**: High-performance drag & drop (fork of react-beautiful-dnd)
 
-You can choose from one of the following two methods to use this repository:
+## 🖥️ Detailed Features
 
-### One-Click Deploy
+- **Kanban Board**:
+  - Drag and drop tasks between columns
+  - Update task status after drag and drop
 
-Deploy the example using [Vercel](https://vercel.com?utm_source=github&utm_medium=readme&utm_campaign=vercel-examples):
+- **Task Management**:
+  - Create/edit via accessible modal
+  - Add subtasks
+  - Auto-fill fields using OpenAI API
+  - Delete and archive
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fexamples%2Ftree%2Fmain%2Fstorage%2Fpostgres-kysely&project-name=postgres-kysely&repository-name=postgres-kysely&demo-title=Vercel%20Postgres%20%2B%20Kysely%20Next.js%20Starter&demo-description=Simple%20Next.js%20template%20that%20uses%20Vercel%20Postgres%20as%20the%20database%20and%20Kysely%20as%20the%20ORM.&demo-url=https%3A%2F%2Fpostgres-kysely.vercel.app%2F&demo-image=https%3A%2F%2Fpostgres-kysely.vercel.app%2Fopengraph-image.png&products=%5B%7B%22type%22%3A%22integration%22%2C%22group%22%3A%22postgres%22%7D%5D)
+- **Accessibility**:
+  - Full keyboard navigation
+  - Focus management, ARIA, contrast
 
-### Clone and Deploy
+- **Security**:
+  - Auth.js authentication (Google, Credentials)
 
-Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) with [pnpm](https://pnpm.io/installation) to bootstrap the example:
+## 🚦 Run the Project Locally
+
+1. **Clone the repo**
 
 ```bash
-pnpm create next-app --example https://github.com/vercel/examples/tree/main/storage/postgres-kysely
+git clone <repo-url>
+cd next-tasks-manager
 ```
 
-Once that's done, copy the .env.example file in this directory to .env.local (which will be ignored by Git):
+2. **Install dependencies**
 
 ```bash
-cp .env.example .env.local
+pnpm install
 ```
 
-Then open `.env.local` and set the environment variables to match the ones in your Vercel Storage Dashboard.
+3. **Configure the environment**
 
-Next, run Next.js in development mode:
+Copy `.env.example` to `.env.local` and fill in your variables (Postgres, NextAuth, etc.)
+
+4. **Start the database (optional, via Docker)**
+
+```bash
+docker-compose up -d
+```
+
+5. **Run migrations**
+
+In the project folder, run the migration commands to create the necessary tables in the database:
+
+```bash
+pnpm db:migrate:up
+```
+
+6. **Start the application**
 
 ```bash
 pnpm dev
 ```
 
-Deploy it to the cloud with [Vercel](https://vercel.com/new?utm_source=github&utm_medium=readme&utm_campaign=vercel-examples) ([Documentation](https://nextjs.org/docs/deployment)).
+7. **Access the application**
+
+Open [http://localhost:3000](http://localhost:3000)
+
+---
