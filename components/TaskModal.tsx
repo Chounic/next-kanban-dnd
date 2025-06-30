@@ -34,6 +34,7 @@ import {
   CalendarIcon,
   Check,
   CircleX,
+  LoaderCircle,
   Pencil,
   Plus,
   Settings,
@@ -63,6 +64,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
+import { toast } from "sonner";
 
 const availableLabels = [
   "bug",
@@ -75,10 +77,12 @@ const availableLabels = [
 
 export default function TaskModal({
   userId,
-  order,
+  order, 
+  onCreate
 }: {
   userId: string;
   order: TasksOrder;
+  onCreate: (task: CreateTask) => void;
 }) {
   const { isOpen, closeModal, task, subTasks, openSubTaskModal } =
     useTaskModal();
@@ -102,6 +106,7 @@ export default function TaskModal({
   );
   const [suggestedLabels, setSuggestedLabels] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (task) {
@@ -157,7 +162,7 @@ export default function TaskModal({
               name: subTask,
               description: "",
               status: "backlog",
-              uuid: uuidv4(),
+              uuid: "temp-" + uuidv4()
             };
             addSubTask(newSubTask);
           });
@@ -186,48 +191,68 @@ export default function TaskModal({
   }
 
   async function onSubmit(data: TaskFormSchema) {
-    if (task) {
-      await updateTask({ ...data, uuid: task.uuid });
-      if (task.status !== data.status) {
-        await handleOrderChange(task.status, data.status, task.uuid);
-      }
-      for (const subTaskListItem of subTaskList) {
-        if ("id" in subTaskListItem) {
-          await updateTask(subTaskListItem as UpdateTask);
-          const subTask = subTasks.find(
-            (st) => st.uuid === subTaskListItem.uuid
-          );
-          if (subTask && subTask.status !== subTaskListItem.status) {
-            await handleOrderChange(
-              subTask.status,
-              subTaskListItem.status,
-              subTask.uuid
+      setIsSubmitting(true);
+      if (task) {
+        await updateTask({ ...data, uuid: task.uuid });
+        if (task.status !== data.status) {
+          await handleOrderChange(task.status, data.status, task.uuid);
+        }
+        for (const subTaskListItem of subTaskList) {
+          if ("id" in subTaskListItem) {
+            await updateTask(subTaskListItem as UpdateTask);
+            const subTask = subTasks.find(
+              (st) => st.uuid === subTaskListItem.uuid
             );
+            if (subTask && subTask.status !== subTaskListItem.status) {
+              await handleOrderChange(
+                subTask.status,
+                subTaskListItem.status,
+                subTask.uuid
+              );
+            }
+          } else {
+            await createTask({
+              ...(subTaskListItem as CreateTask),
+              userId,
+              parentTaskId: task.id,
+            });
           }
-        } else {
-          await createTask({
-            ...(subTaskListItem as CreateTask),
-            userId,
-            parentTaskId: task.id,
-          });
         }
-      }
+  
+        for (const subTask of subTasks) {
+          if (!subTaskList.map((st) => st.uuid).includes(subTask.uuid)) {
+            await deleteTask(subTask.uuid);
+          }
+        }
+      } else {
+        const tempUuid = "temp-" + uuidv4();
+        const optimisticTaskData = { ...data, userId: userId, uuid: tempUuid };
+        onCreate(optimisticTaskData);
 
-      for (const subTask of subTasks) {
-        if (!subTaskList.map((st) => st.uuid).includes(subTask.uuid)) {
-          await deleteTask(subTask.uuid);
+        for (const subTask of subTaskList) {
+          onCreate({
+            ...subTask,
+            userId
+          } as CreateTask);
         }
+        try {
+          const newTask = await createTask({ ...data, userId });
+          for (const subTask of subTaskList as (CreateTask & { uuid: string })[]) {
+              await createTask({
+                ...subTask,
+                userId,
+                parentTaskId: newTask?.id,
+                uuid: subTask.uuid 
+              });
+          }
+        } catch(error) {
+          toast.error("Une erreur est survenue");
+        }
+
+  
+
       }
-    } else {
-      const newTask = await createTask({ ...data, userId });
-      for (const subTask of subTaskList as CreateTask[]) {
-        await createTask({
-          ...subTask,
-          userId,
-          parentTaskId: newTask?.id,
-        });
-      }
-    }
+      setIsSubmitting(false);
     form.reset();
     closeModal();
   }
@@ -318,7 +343,7 @@ export default function TaskModal({
                           <FormControl>
                             <Textarea
                               {...field}
-                              className="w-full p-2 border rounded sm:flex-1"
+                              className="w-full p-2 border rounded sm:flex-1 min-h-[150px]"
                             /> 
                           </FormControl>
                           <FormMessage />
@@ -744,11 +769,17 @@ export default function TaskModal({
               Annuler
             </Button>
             <Button
-              className="px-4 py-2 text-white"
+              className="px-4 py-2 text-white min-w-[100px]"
               type="submit"
               form="task-form"
+              disabled={isSubmitting || isPending}
             >
-              {task ? "Enregistrer" : "Créer"}
+              { isSubmitting ? (
+                <LoaderCircle 
+                  className="animate-spin"
+                />
+                ) : task ? "Enregistrer" : "Créer"
+              }
             </Button>
           </div>
         </DialogContent>

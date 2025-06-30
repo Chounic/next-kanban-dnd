@@ -61,10 +61,10 @@ export async function softDeleteTask(taskUuid: string) {
   revalidatePath("/");
 }
 
-export async function getTasksOrder(userUuid: string) {
+export async function getTasksOrder(userId: string) {
   const data = await db
     .selectFrom("tasks_order")
-    .where("userId", "=", userUuid)
+    .where("userId", "=", userId)
     .select("order")
     .execute();
 
@@ -72,7 +72,7 @@ export async function getTasksOrder(userUuid: string) {
 }
 export async function updateTasksOrder(
   order: TasksOrder,
-  userUuid: string,
+  userId: string,
   revalidate: boolean = true
 ) {
   await db
@@ -80,7 +80,7 @@ export async function updateTasksOrder(
     .set({
       order: order,
     })
-    .where("userId", "=", userUuid)
+    .where("userId", "=", userId)
     .executeTakeFirst();
 
   if (revalidate) revalidatePath("/");

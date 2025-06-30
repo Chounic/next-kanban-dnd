@@ -76,7 +76,7 @@ export interface TaskTable {
   description: string;
   status: ColumnType<TaskStatusType>;
   userId: string;
-  priority: ColumnType<"low" | "medium" | "high" | "urgent">;
+  priority: ColumnType<"low" | "medium" | "high" | "urgent", "low" | "medium" | "high" | "urgent" | undefined, "low" | "medium" | "high" | "urgent">;
   dueDate: Date | null;
   labels: ColumnType<string[], string[] | undefined, string[] | undefined>;
   parentTaskId: ColumnType<

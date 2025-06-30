@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useMemo, useOptimistic, useState } from "react";
 import { TasksOrder } from "@/database/kysely";
 import TaskCard from "./TaskCard";
 import { TaskStatus } from "@/utils/registry";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import { cn } from "@/lib/utils";
-import { updateTask, updateTasksOrder } from "@/action/tasks-server";
+import { deleteTask, updateTask, updateTasksOrder } from "@/action/tasks-server";
 import { TaskWithSubTasks } from "./TaskBoard";
 import { Squircle } from "lucide-react";
 import TaskModal from "./TaskModal";
+import { toast } from "sonner";
 
 const taskStatusEntries = Object.entries(TaskStatus);
 
@@ -18,6 +19,10 @@ function toTitleCase(str: string): string {
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/^./, (char) => char.toUpperCase());
 }
+
+type AddTaskAction = { type: "add"; data: TaskWithSubTasks };
+type DeleteTaskAction = { type: "delete"; data: string };
+type OptimisticTaskAction = AddTaskAction | DeleteTaskAction;
 
 export default function TasksList({
   tasksWithSubTasks,
@@ -29,11 +34,67 @@ export default function TasksList({
   userId: string;
 }) {
   const [tasksOrder, setTasksOrder] = useState<TasksOrder>({});
-  const columnsGap = 4;
-  const numberOfColumns = taskStatusEntries.length;
-  const columnWidth = `calc(${100 / numberOfColumns}% - ${
-    (columnsGap * (numberOfColumns - 1)) / numberOfColumns
-  }px)`;
+  const [optimisticTasks, setOptimisticTasks] = useOptimistic(
+    tasksWithSubTasks,
+    (state, action: OptimisticTaskAction) => {
+      switch (action.type) {
+        case "add":
+          return [...state, action.data];
+        case "delete":
+          return state.filter((task) => task.task.uuid !== action.data);
+        default:
+          return state;
+        }
+      }
+    );
+    const columnsGap = 4;
+    const numberOfColumns = taskStatusEntries.length;
+    const columnWidth = `calc(${100 / numberOfColumns}% - ${
+      (columnsGap * (numberOfColumns - 1)) / numberOfColumns
+    }px)`;
+    
+  async function handleCreateTask(data: any) {
+    startTransition(() => {
+      setOptimisticTasks( { type: "add", data: { task: data, subTasks: []}});
+    })
+    setTasksOrder((prev) => ({ ...prev, [data.status]: [...(prev[data.status] || []), data.uuid] }));
+  }
+
+  async function handleDeleteTask(taskUuid, taskStatus, subTasks) {
+    startTransition(() => {
+      setOptimisticTasks( { type: "delete", data: taskUuid});
+    })
+    setTasksOrder(prev => {
+      const updatedStatusTasks = (prev[taskStatus] || []).filter(uuid => uuid !== taskUuid);
+      return { ...prev, [taskStatus]: updatedStatusTasks };
+    });
+
+    for (const subTask of subTasks) {
+      startTransition(() => {
+        setOptimisticTasks( { type: "delete", data: subTask[0]});
+      })
+      setTasksOrder(prev => {
+        const updatedStatusTasks = (prev[subTask[1]] || []).filter(uuid => uuid !== subTask[0]);
+        return { ...prev, [subTask[1]]: updatedStatusTasks };
+      });
+    }
+
+    try {
+      await deleteTask(taskUuid);
+    } catch (error) {
+      const deletedTask = tasksWithSubTasks.find((t) => t.task.uuid === taskUuid);
+      if (deletedTask) {
+        startTransition(() => {
+          setOptimisticTasks({ type: "add", data: deletedTask });
+        })
+        setTasksOrder(prev => {
+          const updatedStatusTasks = [...(prev[taskStatus] || []), taskUuid];
+          return { ...prev, [taskStatus]: updatedStatusTasks };
+        });
+      }
+      toast.error("Une erreur est survenue");
+    }
+  }
 
   useEffect(() => {
     setTasksOrder(() => {
@@ -47,7 +108,6 @@ export default function TasksList({
 
       const nextTasksOrder = { ...defaultTasksOrder, ...order };
 
-      console.log("🚀 ~ setTasksOrder ~ nextTasksOrder:", nextTasksOrder);
       return nextTasksOrder;
     });
   }, [tasksWithSubTasks, order]);
@@ -101,6 +161,14 @@ export default function TasksList({
     return status;
   }
 
+   const taskMap = useMemo(() => {
+    const map = new Map();
+    optimisticTasks.forEach((t) => {
+      map.set(t.task.uuid, t);
+    });
+    return map;
+  }, [optimisticTasks]);
+
   return (
     <div
       style={{
@@ -146,14 +214,28 @@ export default function TasksList({
                         readOnly
                       />
                       {tasksOrder[value]?.map((taskUuid, index) => {
-                        const t = tasksWithSubTasks.find(
-                          (t) => t.task.uuid === taskUuid
-                        );
+                        if (taskUuid.startsWith("temp-")) {
+                          const optimisticTask = taskMap.get(taskUuid);
+                          if (!optimisticTask) return null;
+                          if (optimisticTask) {
+                            return (
+                              <TaskCard
+                                task={{
+                                  task: optimisticTask.task,
+                                  subTasks: []
+                                }}
+                                className="border-gray-300"
+                                key={optimisticTask.task.uuid}
+                              />
+                            )
+                          }
+                        }
 
-                        return t ? (
+                        const taskItem = taskMap.get(taskUuid);
+                        return taskItem ? (
                           <Draggable
-                            key={t.task.uuid}
-                            draggableId={t.task.uuid}
+                            key={taskItem.task.uuid}
+                            draggableId={taskItem.task.uuid}
                             index={index}
                           >
                             {(provided, snapshot) => (
@@ -162,12 +244,12 @@ export default function TasksList({
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
                                 task={{
-                                  ...t,
+                                  ...taskItem,
                                   task: {
-                                    ...t.task,
+                                    ...taskItem.task,
                                     status:
-                                      getCurrentStatus(t.task.uuid) ??
-                                      t.task.status,
+                                      getCurrentStatus(taskItem.task.uuid) ??
+                                      taskItem.task.status,
                                   },
                                 }}
                                 className={cn(
@@ -176,6 +258,7 @@ export default function TasksList({
                                     ? " ring-blue-600 ring-2 border-transparent"
                                     : "border-gray-300"
                                 )}
+                                onDelete={handleDeleteTask}
                               />
                             )}
                           </Draggable>
@@ -190,7 +273,7 @@ export default function TasksList({
           );
         })}
       </DragDropContext>
-      <TaskModal userId={userId} order={tasksOrder} />
+      <TaskModal userId={userId} order={tasksOrder} onCreate={handleCreateTask}/>
     </div>
   );
 }

@@ -35,18 +35,21 @@ interface TaskCardProps {
   subTasks: Task[];
   className?: string;
 }
+type SubTaskTuple = [string, string]; // [uuid, status]
 
 export default function TaskCard({
   task,
   ref,
   overlay = false,
   className,
+  onDelete,
   ...props
 }: {
   task: TaskCardProps;
   ref?: React.Ref<HTMLDivElement>;
   overlay?: boolean;
   className?: string;
+  onDelete?: (uuid: string, status: string, subTasks: SubTaskTuple[]) => Promise<void>;
 }) {
   const { openModal } = useTaskModal();
   const [openArchiveDialog, setOpenArchiveDialog] = useState(false);
@@ -156,7 +159,7 @@ export default function TaskCard({
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-500 text-white hover:bg-red-500/70 focus:bg-red-500/70"
-              onClick={async () => deleteTask(mainTask.uuid)}
+              onClick={() => onDelete ? onDelete(mainTask.uuid, mainTask.status, subTasks.map( st => [st.uuid, st.status])) : null}
             >
               <TriangleAlert />
               Supprimer

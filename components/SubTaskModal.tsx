@@ -55,7 +55,8 @@ export default function SubTaskModal({
       form.setValue("uuid", editedSubTask.uuid);
     } else {
       form.reset();
-      form.setValue("uuid", uuidv4());
+      const tempUuid = "temp-" +  uuidv4();
+      form.setValue("uuid", tempUuid); // set a temporary UUID for new sub-tasks
     }
   }, [form, editedSubTask, isSubTaskModalOpen]);
 
