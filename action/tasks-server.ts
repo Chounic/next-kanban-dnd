@@ -4,6 +4,18 @@ import { CreateTask, db, TasksOrder, UpdateTask } from "@/database/kysely";
 import { revalidatePath } from "next/cache";
 import { OpenAI } from "openai";
 
+
+export async function getTasks(userId: string) {
+  const tasks = await db
+      .selectFrom("tasks")
+      .where("userId", "=", userId)
+      .where("archived", "=", false)
+      .selectAll()
+      .execute();
+
+  return tasks;
+}
+
 export async function createTask(data: CreateTask) {
   const task = await db
     .insertInto("tasks")

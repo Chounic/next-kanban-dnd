@@ -179,6 +179,7 @@ export default function TasksList({
       <DragDropContext onDragEnd={handleDragEnd}>
         {taskStatusEntries.map((taskStatus) => {
           const [key, value] = taskStatus;
+          if (!tasksOrder[value]) return null
           return (
             <div
               key={value}

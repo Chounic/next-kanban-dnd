@@ -1,8 +1,8 @@
-import { db, Task, TasksOrder } from "@/database/kysely";
+import { Task, TasksOrder } from "@/database/kysely";
 import SearchBar from "./SearchBar";
 import CreateTaskButton from "./CreateTaskButton";
 import TasksList from "./TasksList";
-import { getTasksOrder } from "@/action/tasks-server";
+import { getTasks, getTasksOrder } from "@/action/tasks-server";
 
 export interface TaskWithSubTasks {
   task: Task;
@@ -14,12 +14,10 @@ export default async function TaskBoard({ userId }: { userId: string }) {
   let tasksOrder: TasksOrder = {};
 
   try {
-    const tasks = await db
-      .selectFrom("tasks")
-      .where("userId", "=", userId)
-      .where("archived", "=", false)
-      .selectAll()
-      .execute();
+    const [tasks, order] = await Promise.all([
+      getTasks(userId),
+      getTasksOrder(userId)
+    ]);
 
     const taskMap: Record<string, TaskWithSubTasks> = {};
     for (const task of tasks) {
@@ -32,8 +30,7 @@ export default async function TaskBoard({ userId }: { userId: string }) {
       }
     }
     tasksWithSubTasks = Object.values(taskMap);
-
-    tasksOrder = await getTasksOrder(userId);
+    tasksOrder = order
   } catch (e: any) {
     console.error(e);
   }

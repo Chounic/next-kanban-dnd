@@ -231,7 +231,8 @@ export default function TaskModal({
 
         for (const subTask of subTaskList) {
           onCreate({
-            ...subTask,
+            ...subTask, 
+            priority: "medium",
             userId
           } as CreateTask);
         }
