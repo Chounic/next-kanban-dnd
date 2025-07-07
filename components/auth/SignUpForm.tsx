@@ -59,11 +59,11 @@ export function SignUpForm({
             name="email"
             render={({ field, fieldState }) => (
               <FormItem className="mb-4 flex flex-col gap-2 min-h-[110px]">
-                <FormLabel className="block mb-1">Email</FormLabel>
+                <FormLabel className="mb-2 text-sm text-start text-grey-900">Email</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
-                    className={cn(
+                    className={cn("h-[unset] flex items-center w-full px-5 py-4 mr-2 text-sm font-medium outline-none focus:bg-grey-400 mb-7 placeholder:text-grey-700 bg-grey-200 text-dark-grey-900 rounded-2xl",
                       fieldState.error &&
                         "border-red-600 text-destructive focus-visible:ring-0"
                     )}
@@ -85,13 +85,13 @@ export function SignUpForm({
             name="password"
             render={({ field, fieldState }) => (
               <FormItem className="mb-4 gap-2 flex flex-col  min-h-[110px]">
-                <FormLabel className="mb-1">Password</FormLabel>
+                <FormLabel className="mb-2 text-sm text-start text-grey-900">Password</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
                     type="password"
                     disabled={isPending}
-                    className={cn(
+                    className={cn("h-[unset] flex items-center w-full px-5 py-4 mb-5 mr-2 text-sm font-medium outline-none focus:bg-grey-400 placeholder:text-grey-700 bg-grey-200 text-dark-grey-900 rounded-2xl",
                       fieldState.error &&
                         "border-red-600 text-destructive focus-visible:ring-0"
                     )}
@@ -114,7 +114,7 @@ export function SignUpForm({
             </div>
           )}
 
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="h-[unset] w-full px-6 py-5 mb-5 text-sm font-bold leading-none text-white transition duration-300 md:w-96 rounded-2xl hover:bg-purple-blue-600 focus:ring-4 focus:ring-purple-blue-100 bg-purple-blue-500">
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
+import AuthLogo from "./AuthLogo";
 
 interface AuthLayoutProp extends React.HTMLAttributes<HTMLDivElement> {
   title: string;
@@ -25,12 +26,15 @@ export default function AuthLayout({
         className
       )}
     >
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col gap-6">
-          <Card>
+      <div className="flex items-center xl:p-10">
+        <div className="flex flex-col w-full h-full pb-6 text-center bg-white rounded-3xl">
+          <Card className="border-none shadow-none">
             <CardHeader>
-              <CardTitle className="text-2xl">{title}</CardTitle>
-              <CardDescription className="whitespace-nowrap">
+              <CardTitle className="mb-3 text-4xl font-extrabold text-dark-grey-900 flex items-center justify-center gap-4">
+                <h1>{title}</h1>
+                <AuthLogo className="inline-flex sm:hidden mt-2"/>       
+              </CardTitle>
+              <CardDescription className="whitespace-nowrap mb-4 text-grey-700">
                 {description}
               </CardDescription>
             </CardHeader>

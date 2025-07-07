@@ -61,11 +61,11 @@ export function SignInForm({
             name="email"
             render={({ field, fieldState }) => (
               <FormItem className="mb-4 flex flex-col gap-2 min-h-[110px]">
-                <FormLabel className="block mb-1">Email</FormLabel>
+                <FormLabel className="mb-2 text-sm text-start text-grey-900">Email</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
-                    className={cn(
+                    className={cn("h-[unset] flex items-center w-full px-5 py-4 mr-2 text-sm font-medium outline-none focus:bg-grey-400 mb-7 placeholder:text-grey-700 bg-grey-200 text-dark-grey-900 rounded-2xl",
                       fieldState.error &&
                         "border-red-600 text-destructive focus-visible:ring-0"
                     )}
@@ -88,22 +88,13 @@ export function SignInForm({
             render={({ field, fieldState }) => (
               <FormItem className="mb-4 gap-2 flex flex-col  min-h-[110px]">
                 <div className="flex justify-between items-center">
-                  <FormLabel className="mb-1">Password</FormLabel>
-                  <a
-                    href="#"
-                    className={cn(
-                      "ml-auto mb-1 inline-block text-sm underline-offset-4 hover:underline pointer-events-none",
-                      fieldState.error &&
-                        "border-red-600 text-destructive focus-visible:ring-0 font-medium"
-                    )}
-                  >
-                    Mot de passe oublié?
-                  </a>
+                  <FormLabel className="mb-2 text-sm text-start text-grey-900">Password</FormLabel>
+
                 </div>
                 <FormControl>
                   <Input
                     {...field}
-                    className={cn(
+                    className={cn("h-[unset] flex items-center w-full px-5 py-4 mb-5 mr-2 text-sm font-medium outline-none focus:bg-grey-400 placeholder:text-grey-700 bg-grey-200 text-dark-grey-900 rounded-2xl",
                       fieldState.error &&
                         "border-red-600 text-destructive focus-visible:ring-0"
                     )}
@@ -114,6 +105,7 @@ export function SignInForm({
                       field.onChange(value);
                       setError("");
                     }}
+                    placeholder="Saisissez un mot de passe"
                   />
                 </FormControl>
                 <FormMessage />
@@ -128,11 +120,29 @@ export function SignInForm({
             </div>
           )}
 
-          <Button type="submit" className="w-full">
+          <div className="flex flex-row justify-between mb-8">
+            <label className="relative inline-flex items-center mr-3 cursor-pointer select-none">
+              <input type="checkbox" disabled defaultChecked value="" className="sr-only peer" />
+              <div
+                className="w-5 h-5 bg-white border-2 rounded-sm border-grey-500 peer peer-checked:border-0 peer-checked:bg-purple-blue-500">
+                <img className="" src="https://raw.githubusercontent.com/Loopple/loopple-public-assets/main/motion-tailwind/img/icons/check.png" alt="tick" />
+              </div>
+              <span className="ml-3 text-sm font-normal text-grey-900">Se souvenir de moi</span>
+            </label>
+
+            <a
+                href="#"
+                className="mr-4 text-sm font-medium text-purple-blue-500"
+              >
+                Mot de passe oublié?
+            </a>
+          </div>
+
+          <Button type="submit" className="h-[unset] w-full px-6 py-5 mb-5 text-sm font-bold leading-none text-white transition duration-300 md:w-96 rounded-2xl hover:bg-purple-blue-600 focus:ring-4 focus:ring-purple-blue-100 bg-purple-blue-500">
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading...
+                Chargement...
               </>
             ) : (
               "Se connecter"

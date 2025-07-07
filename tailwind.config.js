@@ -7,6 +7,12 @@ module.exports = {
     "./app/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    container: {
+      padding: {
+        DEFAULT: '1rem',
+        lg: '4rem'
+      },
+    },
     extend: {
       fontFamily: {
         default: ["var(--font-inter)"],
@@ -57,6 +63,19 @@ module.exports = {
           4: "hsl(var(--chart-4))",
           5: "hsl(var(--chart-5))",
         },
+        // Custom greys and purples for login form
+        'grey-900': '#2b3674',
+        'grey-700': '#707eae',
+        'grey-600': '#68769f',
+        'grey-500': '#e0e5f2',
+        'grey-400': '#e9edf7',
+        'grey-300': '#f4f7fe',
+        'grey-200': '#f6f8fd',
+        'purple-blue-500': '#591ff9',
+        'purple-blue-600': '#551ce5',
+        'purple-blue-100': '#E0E7FF',
+        'dark-grey-900': '#1b2559',
+
       },
       keyframes: {
         "accordion-down": {
