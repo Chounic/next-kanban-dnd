@@ -124,7 +124,7 @@ export function SignInForm({
             <label className="relative inline-flex items-center mr-3 cursor-pointer select-none">
               <input type="checkbox" disabled defaultChecked value="" className="sr-only peer" />
               <div
-                className="w-5 h-5 bg-white border-2 rounded-sm border-grey-500 peer peer-checked:border-0 peer-checked:bg-purple-blue-500">
+                className="w-5 h-5 bg-white border-2 rounded-sm border-grey-500 peer peer-checked:border-0 peer-checked:bg-primary">
                 <img className="" src="https://raw.githubusercontent.com/Loopple/loopple-public-assets/main/motion-tailwind/img/icons/check.png" alt="tick" />
               </div>
               <span className="ml-3 text-sm font-normal text-grey-900">Se souvenir de moi</span>
@@ -132,13 +132,13 @@ export function SignInForm({
 
             <a
                 href="#"
-                className="mr-4 text-sm font-medium text-purple-blue-500"
+                className="mr-4 text-sm font-medium text-primary"
               >
                 Mot de passe oublié?
             </a>
           </div>
 
-          <Button type="submit" className="h-[unset] w-full px-6 py-5 mb-5 text-sm font-bold leading-none text-white transition duration-300 md:w-96 rounded-2xl hover:bg-purple-blue-600 focus:ring-4 focus:ring-purple-blue-100 bg-purple-blue-500">
+          <Button type="submit" className="h-[unset] w-full px-6 py-5 mb-5 text-sm font-bold leading-none transition duration-300 md:w-96 rounded-2xl focus:ring-4 focus:ring-purple-blue-100">
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

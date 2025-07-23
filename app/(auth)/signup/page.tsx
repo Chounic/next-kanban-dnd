@@ -3,7 +3,7 @@ import GoogleAuthButton from "@/components/auth/GoogleSignInBtn";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { Separator } from "@radix-ui/react-dropdown-menu";
 import Link from "next/link";
-import AuthLogo from "@/components/auth/AuthLogo";
+import ProjectLogo from "@/components/auth/AuthLogo";
 
 export default function Page() {
   return (
@@ -11,7 +11,7 @@ export default function Page() {
       title="S'inscrire"
       description="Remplissez les champs ci-dessous pour vous inscrire"
     >
-      <AuthLogo className="hidden sm:flex fixed top-6 right-8 z-50"/>
+      <ProjectLogo className="hidden sm:flex fixed top-6 right-8 z-50"/>
       <GoogleAuthButton text="S'inscrire avec Google" />
       <div className="flex items-center mb-3">
         <hr className="h-0 border-b border-solid border-grey-500 grow" />

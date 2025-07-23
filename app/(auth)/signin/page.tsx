@@ -1,5 +1,5 @@
 import AuthLayout from "@/components/auth/AuthLayout";
-import AuthLogo from "@/components/auth/AuthLogo";
+import ProjectLogo from "@/components/auth/AuthLogo";
 import GoogleAuthButton from "@/components/auth/GoogleSignInBtn";
 import { SignInForm } from "@/components/auth/SignInForm";
 import TestComponent from "@/components/TestComponent";
@@ -12,7 +12,7 @@ export default function Page() {
       title="Se connecter"
       description="Remplissez les champs ci-dessous pour vous connecter"
     >
-      <AuthLogo className="hidden sm:flex fixed top-6 right-8 z-50"/>
+      <ProjectLogo className="hidden sm:flex fixed top-6 right-8 z-50"/>
       <GoogleAuthButton text="Se connecter avec Google" />
       <div className="flex items-center mb-3">
         <hr className="h-0 border-b border-solid border-grey-500 grow" />

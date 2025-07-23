@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { signout } from "@/action/auth-server";
 import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 
 export function SignOut() {
   const router = useRouter();
@@ -23,10 +24,11 @@ export function SignOut() {
 
   return (
     <Button
-      className="bg-gray-800 hover:bg-gray-800/90"
+      className="bg-gray-800 hover:bg-gray-800/90 rounded-md"
       onClick={handleSignOut}
     >
-      Sign out
+      <LogOut />
+      <span className="hidden sm:inline">Déconnexion</span>
     </Button>
   );
 }
