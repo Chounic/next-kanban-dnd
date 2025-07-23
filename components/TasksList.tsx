@@ -7,10 +7,11 @@ import { TaskStatus } from "@/utils/registry";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import { cn } from "@/lib/utils";
 import { deleteTask, updateTask, updateTasksOrder } from "@/action/tasks-server";
-import { TaskWithSubTasks } from "./TaskBoard";
 import { Squircle } from "lucide-react";
 import TaskModal from "./TaskModal";
 import { toast } from "sonner";
+import SearchBar from "./SearchBar";
+import { TaskWithSubTasks } from "@/app/(dashboard)/page";
 
 const taskStatusEntries = Object.entries(TaskStatus);
 
@@ -21,25 +22,37 @@ function toTitleCase(str: string): string {
 }
 
 type AddTaskAction = { type: "add"; data: TaskWithSubTasks };
+type UpdateTaskAction = { type: "update"; data: TaskWithSubTasks };
 type DeleteTaskAction = { type: "delete"; data: string };
-type OptimisticTaskAction = AddTaskAction | DeleteTaskAction;
+type OptimisticTaskAction = AddTaskAction | UpdateTaskAction | DeleteTaskAction;
 
 export default function TasksList({
   tasksWithSubTasks,
   order,
-  userId,
+  userId
 }: {
   tasksWithSubTasks: TaskWithSubTasks[];
   order: TasksOrder;
   userId: string;
 }) {
   const [tasksOrder, setTasksOrder] = useState<TasksOrder>({});
+  const [search, setSearch] = useState("");
+  const filteredTasks = useMemo(() => {
+    if (!search) return tasksWithSubTasks;
+    return tasksWithSubTasks.filter((t) =>
+      t.task.name.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [tasksWithSubTasks, search]);
   const [optimisticTasks, setOptimisticTasks] = useOptimistic(
-    tasksWithSubTasks,
+    filteredTasks,
     (state, action: OptimisticTaskAction) => {
       switch (action.type) {
         case "add":
           return [...state, action.data];
+        case "update":
+          return state.map((t) =>
+            t.task.uuid === action.data.task.uuid ? { ...t, ...action.data } : t
+          );
         case "delete":
           return state.filter((task) => task.task.uuid !== action.data);
         default:
@@ -47,17 +60,49 @@ export default function TasksList({
         }
       }
     );
-    const columnsGap = 4;
-    const numberOfColumns = taskStatusEntries.length;
-    const columnWidth = `calc(${100 / numberOfColumns}% - ${
-      (columnsGap * (numberOfColumns - 1)) / numberOfColumns
-    }px)`;
+  const columnsGap = 4;
+  const numberOfColumns = taskStatusEntries.length;
+  const columnWidth = `calc(${100 / numberOfColumns}% - ${
+    (columnsGap * (numberOfColumns - 1)) / numberOfColumns
+  }px)`;
+  
+  useEffect(() => {
+    setTasksOrder(() => {
+      const defaultTasksOrder: TasksOrder = {};
+
+      taskStatusEntries.forEach((taskStatus) => {
+        const [key, value] = taskStatus;
+
+        defaultTasksOrder[value] = [];
+      });
+
+      const nextTasksOrder = { ...defaultTasksOrder, ...order };
+
+      return nextTasksOrder;
+    });
+  }, [tasksWithSubTasks, order]);
     
-  async function handleCreateTask(data: any) {
+  async function handleCreateTask(task: any) {
+    setSearch("");
     startTransition(() => {
-      setOptimisticTasks( { type: "add", data: { task: data, subTasks: []}});
-    })
-    setTasksOrder((prev) => ({ ...prev, [data.status]: [...(prev[data.status] || []), data.uuid] }));
+      setOptimisticTasks( { type: "add", data: { task, subTasks: []}});
+    });
+    setTasksOrder((prev) => ({ ...prev, [task.status]: [...(prev[task.status] || []), task.uuid] }));
+  }
+ 
+  async function handleUpdateTask(task: any) { //TODO !!!!
+    startTransition(() => {
+      setOptimisticTasks({type: "update", data: { task, subTasks: []}});;
+    });
+    setTasksOrder((prev) => {
+      const currentStatus = getCurrentStatus(task.uuid);
+      if (currentStatus && currentStatus !== task.status) {
+        const updatedStatusTasks = (prev[currentStatus] || []).filter(uuid => uuid !== task.uuid);
+        return { ...prev, [currentStatus]: updatedStatusTasks, [task.status]: [...(prev[task.status] || []), task.uuid] };
+      }
+      return prev;
+    });
+  
   }
 
   async function handleDeleteTask(taskUuid, taskStatus, subTasks) {
@@ -96,21 +141,6 @@ export default function TasksList({
     }
   }
 
-  useEffect(() => {
-    setTasksOrder(() => {
-      const defaultTasksOrder: TasksOrder = {};
-
-      taskStatusEntries.forEach((taskStatus) => {
-        const [key, value] = taskStatus;
-
-        defaultTasksOrder[value] = [];
-      });
-
-      const nextTasksOrder = { ...defaultTasksOrder, ...order };
-
-      return nextTasksOrder;
-    });
-  }, [tasksWithSubTasks, order]);
 
   function handleDragEnd(result) {
     const { source, destination, draggableId } = result;
@@ -170,111 +200,114 @@ export default function TasksList({
   }, [optimisticTasks]);
 
   return (
-    <div
-      style={{
-        gap: columnsGap,
-      }}
-      className="flex flex-1"
-    >
-      <DragDropContext onDragEnd={handleDragEnd}>
-        {taskStatusEntries.map((taskStatus) => {
-          const [key, value] = taskStatus;
-          if (!tasksOrder[value]) return null
-          return (
-            <div
-              key={value}
-              style={{
-                width: columnWidth,
-              }}
-              className={cn(
-                "border rounded-sm bg-stone-50 has-[:checked]:ring-blue-600 has-[:checked]:ring-2 has-[:checked]:border-transparent border-gray-300 flex flex-col"
-              )}
-            >
-              <div className="p-4 min-h-[100px] sticky top-0 z-10 border-b-2 ">
-                <div className="flex items-center gap-1 mb-2 text-sm">
-                  <Squircle size={16} className="hidden sm:block" />
-                  <h2 className="font-semibold">{toTitleCase(key)}</h2>
-                </div>
-                {/* <div className="text-sm text-gray-500">
-                      description description description description
-                      description
-                    </div> */}
-              </div>
-              <Droppable droppableId={value}>
-                {(provided, snapshot) => {
-                  return (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className="flex-1 p-1 sm:p-2"
-                    >
-                      <input
-                        type="checkbox"
-                        className="hidden"
-                        checked={snapshot.isDraggingOver}
-                        readOnly
-                      />
-                      {tasksOrder[value]?.map((taskUuid, index) => {
-                        if (taskUuid.startsWith("temp-")) {
-                          const optimisticTask = taskMap.get(taskUuid);
-                          if (!optimisticTask) return null;
-                          if (optimisticTask) {
-                            return (
-                              <TaskCard
-                                task={{
-                                  task: optimisticTask.task,
-                                  subTasks: []
-                                }}
-                                className="border-gray-300"
-                                key={optimisticTask.task.uuid}
-                              />
-                            )
-                          }
-                        }
-
-                        const taskItem = taskMap.get(taskUuid);
-                        return taskItem ? (
-                          <Draggable
-                            key={taskItem.task.uuid}
-                            draggableId={taskItem.task.uuid}
-                            index={index}
-                          >
-                            {(provided, snapshot) => (
-                              <TaskCard
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                task={{
-                                  ...taskItem,
-                                  task: {
-                                    ...taskItem.task,
-                                    status:
-                                      getCurrentStatus(taskItem.task.uuid) ??
-                                      taskItem.task.status,
-                                  },
-                                }}
-                                className={cn(
-                                  "",
-                                  snapshot.isDragging
-                                    ? " ring-blue-600 ring-2 border-transparent"
-                                    : "border-gray-300"
-                                )}
-                                onDelete={handleDeleteTask}
-                              />
-                            )}
-                          </Draggable>
-                        ) : null;
-                      })}
-                      {provided.placeholder}
-                    </div>
-                  );
+    <div className="flex flex-col flex-1">
+      <SearchBar search={search} setSearch={setSearch} />
+      <div
+        style={{
+          gap: columnsGap,
+        }}
+        className="flex flex-1"
+      >
+        <DragDropContext onDragEnd={handleDragEnd}>
+          {taskStatusEntries.map((taskStatus) => {
+            const [key, value] = taskStatus;
+            if (!tasksOrder[value]) return null
+            return (
+              <div
+                key={value}
+                style={{
+                  width: columnWidth,
                 }}
-              </Droppable>
-            </div>
-          );
-        })}
-      </DragDropContext>
-      <TaskModal userId={userId} order={tasksOrder} onCreate={handleCreateTask}/>
+                className={cn(
+                  "border rounded-sm bg-stone-50 has-[:checked]:ring-blue-600 has-[:checked]:ring-2 has-[:checked]:border-transparent border-gray-300 flex flex-col"
+                )}
+              >
+                <div className="p-4 min-h-[100px] sticky top-0 z-10 border-b-2 ">
+                  <div className="flex items-center gap-1 mb-2 text-sm">
+                    <Squircle size={16} className="hidden sm:block" />
+                    <h2 className="font-semibold text-base">{toTitleCase(key)}</h2>
+                  </div>
+                  {/* <div className="text-sm text-gray-500">
+                        description description description description
+                        description
+                      </div> */}
+                </div>
+                <Droppable droppableId={value}>
+                  {(provided, snapshot) => {
+                    return (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className="flex-1 p-1 sm:p-2"
+                      >
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={snapshot.isDraggingOver}
+                          readOnly
+                        />
+                        {tasksOrder[value]?.map((taskUuid, index) => {
+                          if (taskUuid.startsWith("temp-")) {
+                            const optimisticTask = taskMap.get(taskUuid);
+                            if (!optimisticTask) return null;
+                            if (optimisticTask) {
+                              return (
+                                <TaskCard
+                                  task={{
+                                    task: optimisticTask.task,
+                                    subTasks: []
+                                  }}
+                                  className="border-gray-300"
+                                  key={optimisticTask.task.uuid}
+                                />
+                              )
+                            }
+                          }
+
+                          const taskItem = taskMap.get(taskUuid);
+                          return taskItem ? (
+                            <Draggable
+                              key={taskItem.task.uuid}
+                              draggableId={taskItem.task.uuid}
+                              index={index}
+                            >
+                              {(provided, snapshot) => (
+                                <TaskCard
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  task={{
+                                    ...taskItem,
+                                    task: {
+                                      ...taskItem.task,
+                                      status:
+                                        getCurrentStatus(taskItem.task.uuid) ??
+                                        taskItem.task.status,
+                                    },
+                                  }}
+                                  className={cn(
+                                    "",
+                                    snapshot.isDragging
+                                      ? " ring-blue-600 ring-2 border-transparent"
+                                      : "border-gray-300"
+                                  )}
+                                  onDelete={handleDeleteTask}
+                                />
+                              )}
+                            </Draggable>
+                          ) : null;
+                        })}
+                        {provided.placeholder}
+                      </div>
+                    );
+                  }}
+                </Droppable>
+              </div>
+            );
+          })}
+        </DragDropContext>
+        <TaskModal userId={userId} order={tasksOrder} onCreate={handleCreateTask} onUpdate={handleUpdateTask}/>
+      </div>
     </div>
   );
 }

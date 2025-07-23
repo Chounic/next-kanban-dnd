@@ -36,6 +36,7 @@ module.exports = {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          hover: "hsl(var(--primary-hover))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -71,8 +72,6 @@ module.exports = {
         'grey-400': '#e9edf7',
         'grey-300': '#f4f7fe',
         'grey-200': '#f6f8fd',
-        'purple-blue-500': '#591ff9',
-        'purple-blue-600': '#551ce5',
         'purple-blue-100': '#E0E7FF',
         'dark-grey-900': '#1b2559',
 
