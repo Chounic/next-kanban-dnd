@@ -1,8 +1,7 @@
 "use client";
 
-import { TaskWithSubTasks } from "@/app/(dashboard)/page";
 import type React from "react";
-import { useState } from "react";
+import { Input } from "./ui/input";
 
 
 type SearchBarProps = {
@@ -13,10 +12,10 @@ type SearchBarProps = {
 export default function SearchBar({ search, setSearch }: SearchBarProps) {
 
   return (
-      <input
-        type="text"
+      <Input
+        type="search"
         placeholder="Filtrer les tâches..."
-        className="w-1/2 sm:w-1/5 p-2 mb-12 border rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
+        className="w-1/2 h-[unset] shadow-none sm:w-1/5 p-2 md:text-base mb-12 border rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring "
         value={search}
         onChange={e => setSearch(e.target.value)}
       />

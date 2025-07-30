@@ -43,20 +43,22 @@ export default function SubTaskModal({
     defaultValues: {
       name: "",
       description: "",
-      status: "backlog",
+      status: "backlog"
     },
   });
 
   useEffect(() => {
-    if (editedSubTask) {
-      form.setValue("name", editedSubTask.name);
-      form.setValue("description", editedSubTask.description);
-      form.setValue("status", editedSubTask.status);
-      form.setValue("uuid", editedSubTask.uuid);
-    } else {
-      form.reset();
-      const tempUuid = "temp-" +  uuidv4();
-      form.setValue("uuid", tempUuid); // set a temporary UUID for new sub-tasks
+    if (isSubTaskModalOpen) {
+      if (editedSubTask) {
+        form.setValue("name", editedSubTask.name);
+        form.setValue("description", editedSubTask.description);
+        form.setValue("status", editedSubTask.status);
+        form.setValue("uuid", editedSubTask.uuid);
+      } else {
+        form.reset();
+        const tempUuid = "temp-" +  uuidv4();
+        form.setValue("uuid", tempUuid); // set a temporary UUID for new sub-tasks
+      }
     }
   }, [form, editedSubTask, isSubTaskModalOpen]);
 
@@ -66,7 +68,6 @@ export default function SubTaskModal({
     } else {
       onSubTaskCreate(data);
     }
-    form.reset();
     closeSubTaskModal();
   }
 

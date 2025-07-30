@@ -264,7 +264,7 @@ export default function TaskModal({
 
       }
       setIsSubmitting(false);
-    form.reset();
+    // form.reset();
     closeModal();
   }
 
@@ -321,6 +321,7 @@ export default function TaskModal({
             <form
               id="task-form"
               onSubmit={form.handleSubmit(onSubmit)}
+              onKeyDown={(e) => e.key === 'Enter' ? e.preventDefault() : null} // Prevent form submission on Enter key
               className="flex-1 flex flex-col overflow-hidden"
             >
               <div className="flex flex-col md:flex-row flex-1 overflow-auto sm:overflow-hidden">
@@ -336,6 +337,7 @@ export default function TaskModal({
                           <FormControl>
                             <Input
                               {...field}
+                              type="text"
                               className="w-full p-2 border rounded"
                             />
                           </FormControl>
@@ -415,7 +417,7 @@ export default function TaskModal({
                             <FormControl>
                               <select
                                 {...field}
-                                className="w-full px-2 border rounded h-9 cursor-pointer focus-visible:outline-none focus-visible:ring-ring     "
+                                className="w-full px-2 border rounded h-9 cursor-pointer focus-visible:outline-none focus-visible:ring-ring focus-visible:ring-2                "
                                 onChange={(e) => field.onChange(e.target.value)}
                                 value={field.value}
                               >
@@ -711,6 +713,7 @@ export default function TaskModal({
                         </div>{" "}
                         {!isPending && (
                           <Button
+                            type="button"
                             variant="ghost"
                             className="text-xs py-0 pl-0"
                             onClick={(e) => {
@@ -734,6 +737,7 @@ export default function TaskModal({
                             </span>
                             <div className="flex items-center gap-1 ml-2">
                               <Button
+                                type="button"
                                 variant="ghost"
                                 size="icon"
                                 className="h-6 w-6 hover:bg-transparent hover:opacity-80"
@@ -745,6 +749,7 @@ export default function TaskModal({
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
                               <Button
+                                type="button"
                                 variant="ghost"
                                 size="icon"
                                 className="h-6 w-6 text-destructive hover:bg-transparent hover:text-destructive/80"
