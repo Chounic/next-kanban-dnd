@@ -12,7 +12,6 @@ export function SignOut() {
     await signout()
       .then((data) => {
         if (data?.success) {
-          toast(data?.success);
           router.push("/");
         }
         if (data?.error) {

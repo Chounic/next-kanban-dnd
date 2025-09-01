@@ -2,12 +2,12 @@ import AuthLayout from "@/components/auth/AuthLayout";
 import ProjectLogo from "@/components/auth/AuthLogo";
 import GoogleAuthButton from "@/components/auth/GoogleSignInBtn";
 import { SignInForm } from "@/components/auth/SignInForm";
-import TestComponent from "@/components/TestComponent";
-import { Separator } from "@radix-ui/react-dropdown-menu";
+import SignedOutToast from "@/components/auth/toasts/SignedOutToast";
 import Link from "next/link";
 
 export default function Page() {
   return (
+    <>
     <AuthLayout
       title="Se connecter"
       description="Remplissez les champs ci-dessous pour vous connecter"
@@ -30,6 +30,7 @@ export default function Page() {
         </Link>
       </div>
     </AuthLayout>
-    // <TestComponent />
+    <SignedOutToast />
+    </>
   );
 }

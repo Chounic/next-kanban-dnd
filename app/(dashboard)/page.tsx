@@ -2,6 +2,7 @@ import TaskBoard from "@/components/TaskBoard";
 import { auth } from "@/auth";
 import { Task, TasksOrder } from "@/database/kysely";
 import { getTasks, getTasksOrder } from "@/action/tasks-server";
+import SignedInToast from "@/components/auth/toasts/SignedInToast";
 
 export interface TaskWithSubTasks {
   task: Task;
@@ -40,6 +41,7 @@ export default async function TaskManagementPage() {
   return (
     <main className="flex flex-col flex-1">
       <TaskBoard tasksWithSubTasks={tasksWithSubTasks} tasksOrder={tasksOrder} userId={user.id} />
+      <SignedInToast />
     </main>
   );
 }

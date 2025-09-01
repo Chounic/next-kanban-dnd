@@ -52,7 +52,7 @@ export function SignUpForm({
   }
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className={className}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className={cn("max-w-[24rem]", className)}>
         <div className="flex flex-col">
           <FormField
             control={form.control}

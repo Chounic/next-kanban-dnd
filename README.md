@@ -49,7 +49,7 @@ Welcome to this Kanban task manager built with Next.js, Kysely, and Postgres.
 
 ```bash
 git clone <repo-url>
-cd next-tasks-manager
+cd next-kanban-dnd
 ```
 
 2. **Install dependencies**

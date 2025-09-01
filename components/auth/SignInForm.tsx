@@ -17,7 +17,6 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Loader2, TriangleAlert } from "lucide-react";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export function SignInForm({
@@ -39,7 +38,6 @@ export function SignInForm({
       await signin(formData)
         .then((data) => {
           if (data.success) {
-            toast.success(data.success);
             router.push("/");
           }
           if (data.error) {
@@ -54,7 +52,7 @@ export function SignInForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className={className}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className={cn("max-w-[24rem]", className)}>
         <div className="flex flex-col">
           <FormField
             control={form.control}

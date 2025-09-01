@@ -176,94 +176,94 @@ export default function TaskModal({
   };
 
   async function onSubmit(data: TaskFormSchema) {
-      setIsSubmitting(true);
-      if (task) {
-        onUpdate({ ...data, uuid: task.uuid });
-        for (const subTaskListItem of subTaskList) {
-          if ("id" in subTaskListItem) {
-            onUpdate(subTaskListItem as UpdateTask);
-          } else {
-            onCreate({
-              ...(subTaskListItem as CreateTask),
-              userId,
-              parentTaskId: task.id,
-            });
-          }
-        }
-
-        try {
-          let newOrder = { ...order };
-          await updateTask({ ...data, uuid: task.uuid });
-          if (task.status !== data.status) {
-            newOrder[task.status] = (newOrder[task.status] || []).filter((t) => t !== task.uuid);
-            newOrder[data.status] = [...(newOrder[data.status] || []), task.uuid];
-          }
-
-          const subTasksToUpdate = subTaskList.filter(st => "id" in st);
-          const subTasksToCreate = subTaskList.filter(st => !("id" in st));
-          for (const subTaskListItem of subTasksToUpdate) {
-              await updateTask(subTaskListItem as UpdateTask);
-              const subTask = subTasks.find(
-                (st) => st.uuid === subTaskListItem.uuid
-              );
-              if (subTask && subTask.status !== subTaskListItem.status) {
-                newOrder[subTask.status] = (newOrder[subTask.status] || []).filter((t) => t !== subTask.uuid);
-                newOrder[subTaskListItem.status] = [
-                  ...(newOrder[subTaskListItem.status] || []),
-                  subTask.uuid,
-                ];
-              }
-          }
-          await updateTasksOrder(newOrder, userId);
-
-          for (const subTaskListItem of subTasksToCreate) {
-            await createTask({
-              ...(subTaskListItem as CreateTask),
-              userId,
-              parentTaskId: task.id,
-            });
-          }
-          
-        } catch(error) {
-          toast.error("Une erreur est survenue");
-        }
-
-  
-        for (const subTask of subTasks) {
-          if (!subTaskList.map((st) => st.uuid).includes(subTask.uuid)) {
-            await deleteTask(subTask.uuid);
-          }
-        }
-      } else {
-        const tempUuid = "temp-" + uuidv4();
-        const optimisticTaskData = { ...data, userId: userId, uuid: tempUuid };
-        onCreate(optimisticTaskData);
-
-        for (const subTask of subTaskList) {
+    setIsSubmitting(true);
+    if (task) {
+      onUpdate({ ...data, uuid: task.uuid });
+      for (const subTaskListItem of subTaskList) {
+        if ("id" in subTaskListItem) {
+          onUpdate(subTaskListItem as UpdateTask);
+        } else {
           onCreate({
-            ...subTask, 
-            priority: "medium",
-            userId
-          } as CreateTask);
+            ...(subTaskListItem as CreateTask),
+            userId,
+            parentTaskId: task.id,
+          });
         }
-        try {
-          const newTask = await createTask({ ...data, userId });
-          for (const subTask of subTaskList as (CreateTask & { uuid: string })[]) {
-              await createTask({
-                ...subTask,
-                userId,
-                parentTaskId: newTask?.id,
-                uuid: subTask.uuid 
-              });
-          }
-        } catch(error) {
-          toast.error("Une erreur est survenue");
-        }
-
-  
-
       }
-      setIsSubmitting(false);
+
+      try {
+        let newOrder = { ...order };
+        await updateTask({ ...data, uuid: task.uuid });
+        if (task.status !== data.status) {
+          newOrder[task.status] = (newOrder[task.status] || []).filter((t) => t !== task.uuid);
+          newOrder[data.status] = [...(newOrder[data.status] || []), task.uuid];
+        }
+
+        const subTasksToUpdate = subTaskList.filter(st => "id" in st);
+        const subTasksToCreate = subTaskList.filter(st => !("id" in st));
+        for (const subTaskListItem of subTasksToUpdate) {
+            await updateTask(subTaskListItem as UpdateTask);
+            const subTask = subTasks.find(
+              (st) => st.uuid === subTaskListItem.uuid
+            );
+            if (subTask && subTask.status !== subTaskListItem.status) {
+              newOrder[subTask.status] = (newOrder[subTask.status] || []).filter((t) => t !== subTask.uuid);
+              newOrder[subTaskListItem.status] = [
+                ...(newOrder[subTaskListItem.status] || []),
+                subTask.uuid,
+              ];
+            }
+        }
+        await updateTasksOrder(newOrder, userId);
+
+        for (const subTaskListItem of subTasksToCreate) {
+          await createTask({
+            ...(subTaskListItem as CreateTask),
+            userId,
+            parentTaskId: task.id,
+          });
+        }
+        
+      } catch(error) {
+        toast.error("Une erreur est survenue");
+      }
+
+
+      for (const subTask of subTasks) {
+        if (!subTaskList.map((st) => st.uuid).includes(subTask.uuid)) {
+          await deleteTask(subTask.uuid);
+        }
+      }
+    } else {
+      const tempUuid = "temp-" + uuidv4();
+      const optimisticTaskData = { ...data, userId: userId, uuid: tempUuid };
+      onCreate(optimisticTaskData);
+
+      for (const subTask of subTaskList) {
+        onCreate({
+          ...subTask, 
+          priority: "medium",
+          userId
+        } as CreateTask);
+      }
+      try {
+        const newTask = await createTask({ ...data, userId });
+        for (const subTask of subTaskList as (CreateTask & { uuid: string })[]) {
+            await createTask({
+              ...subTask,
+              userId,
+              parentTaskId: newTask?.id,
+              uuid: subTask.uuid 
+            });
+        }
+      } catch(error) {
+        toast.error("Une erreur est survenue");
+      }
+
+
+
+    }
+    setIsSubmitting(false);
     // form.reset();
     closeModal();
   }
