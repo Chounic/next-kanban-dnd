@@ -112,7 +112,7 @@ export function SignInForm({
           />
 
           {error && (
-            <div className="flex items-center gap-2 mb-4 text-red-500 justify-center">
+            <div data-testid="error-message" className="flex items-center gap-2 mb-4 text-red-500 justify-center">
               <TriangleAlert size={36} />
               <span className=" text-sm font-semibold">{error}</span>
             </div>
